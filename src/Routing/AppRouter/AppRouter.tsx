@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import Layout from "../../pages/Layout/Layout";
 import Post from "../../pages/Post/Post";
 import Login from "../../pages/Login/Login";
@@ -12,7 +12,7 @@ import EditProfile from "../../components/Profile/EditProfile/EditProfile";
 
 export const router = createBrowserRouter([
   {path: "/", element: <Layout />, children: [
-    {index: true, element: <ProtectedRoute><Post /></ProtectedRoute>},
+    {index: true, element: <Navigate to="/post" replace /> },
     {path: "post", element: <ProtectedRoute><Post /></ProtectedRoute>},
     {path: "Profile", element: <ProtectedRoute><Profile /></ProtectedRoute>},
     {path: "Profile/Edit", element: (<ProtectedRoute><EditProfile /></ProtectedRoute>),},
