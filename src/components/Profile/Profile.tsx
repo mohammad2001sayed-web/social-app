@@ -47,7 +47,7 @@ export default function Profile() {
           before:absolute before:inset-[-50%]
           before:-rotate-45
           before:bg-[radial-gradient(4px_100px_at_0px_235px,#ff8c11,transparent),radial-gradient(4px_100px_at_300px_235px,#ff7700,transparent),radial-gradient(4px_100px_at_0px_150px,#f97910,transparent),radial-gradient(4px_100px_at_300px_150px,#ff8012,transparent),radial-gradient(4px_100px_at_150px_0px,#a855f7,transparent),radial-gradient(4px_100px_at_150px_300px,#8b5cf6,transparent),radial-gradient(4px_100px_at_0px_75px,#3b82f6,transparent),radial-gradient(4px_100px_at_300px_75px,#2563eb,transparent)]
-          before:bg-[length:300px_235px]
+          before:bg-size-[300px_235px]
           before:animate-[gradient-flow_20s_linear_infinite]
         "
       />
