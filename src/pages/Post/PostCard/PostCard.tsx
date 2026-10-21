@@ -8,6 +8,7 @@ import { useContext, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { FnUpdatePost, FnDeletePost } from "../CreatPost.abi";
+import { toggleLikePost } from "../Post.api";
 
 export default function PostCard({
   post,
@@ -65,6 +66,21 @@ export default function PostCard({
       });
     },
   });
+
+  const { mutate: handleLike } = useMutation({
+    mutationFn: () => toggleLikePost(_id),
+    onSuccess: () => {
+      // تحديث بيانات البوستات لتعكس عدد اللايكات الجديدة
+      queryClient.invalidateQueries({ queryKey: ["allPost"] });
+      queryClient.invalidateQueries({ queryKey: ["PostDetails", _id] });
+    },
+  });
+  // 1. تحقق هل البوست مُعجب به من قِبل المستخدم الحالي أم لا
+const userId = userData?._id || userData?.id;
+
+const isLikedByMe = post.likes?.some((item: any) => 
+  (typeof item === "string" ? item : item?._id || item?.id) === userId
+);
 
   function handleDelete() {
     if (!confirm("Are you sure you want to delete this post?")) {
@@ -348,14 +364,15 @@ export default function PostCard({
                 ========================= */}
 
                 <div className="flex gap-2">
-
-                  
-<button onClick={handleUpdate} className="cursor-pointer group/button relative inline-flex items-center justify-center overflow-hidden rounded-md bg-blue-500/30 backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-xl hover:shadow-blue-600/50 border border-white/20">
-  <span className="text-lg">Update</span>
-  <div className="absolute inset-0 flex h-full w-full justify-center transform-[skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:transform-[skew(-13deg)_translateX(100%)]">
-    <div className="relative h-full w-10 bg-white/30" />
-  </div>
-</button>
+                  <button
+                    onClick={handleUpdate}
+                    className="cursor-pointer group/button relative inline-flex items-center justify-center overflow-hidden rounded-md bg-blue-500/30 backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-xl hover:shadow-blue-600/50 border border-white/20"
+                  >
+                    <span className="text-lg">Update</span>
+                    <div className="absolute inset-0 flex h-full w-full justify-center transform-[skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:transform-[skew(-13deg)_translateX(100%)]">
+                      <div className="relative h-full w-10 bg-white/30" />
+                    </div>
+                  </button>
 
                   <button
                     type="button"
@@ -382,42 +399,84 @@ export default function PostCard({
               </p>
             )}
           </div>
-        </Card.Header> 
+        </Card.Header>
         {isMyPost && (
           <>
-{/* From Uiverse.io by Shubh0408 */} 
-<button onClick={handleDelete}  type="button" className="group cursor-pointer relative flex h-14 w-14 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-red-800 bg-red-400 hover:bg-red-600">    
-  <svg viewBox="0 0 1.625 1.625" className="absolute -top-7 fill-white delay-100 group-hover:top-6 group-hover:animate-[spin_1.4s] group-hover:duration-1000" height={15} width={15}>
-    <path d="M.471 1.024v-.52a.1.1 0 0 0-.098.098v.618c0 .054.044.098.098.098h.487a.1.1 0 0 0 .098-.099h-.39c-.107 0-.195 0-.195-.195" />
-    <path d="M1.219.601h-.163A.1.1 0 0 1 .959.504V.341A.033.033 0 0 0 .926.309h-.26a.1.1 0 0 0-.098.098v.618c0 .054.044.098.098.098h.487a.1.1 0 0 0 .098-.099v-.39a.033.033 0 0 0-.032-.033" />
-    <path d="m1.245.465-.15-.15a.02.02 0 0 0-.016-.006.023.023 0 0 0-.023.022v.108c0 .036.029.065.065.065h.107a.023.023 0 0 0 .023-.023.02.02 0 0 0-.007-.016" />
-  </svg>
-  <svg width={16} fill="none" viewBox="0 0 39 7" className="origin-right duration-500 group-hover:rotate-90">
-    <line strokeWidth={4} stroke="white" y2={5} x2={39} y1={5} />
-    <line strokeWidth={3} stroke="white" y2="1.5" x2="26.0357" y1="1.5" x1={12} />
-  </svg>
-  <svg width={16} fill="none" viewBox="0 0 33 39" >
-    <mask fill="white" id="path-1-inside-1_8_19">
-      <path d="M0 0H33V35C33 37.2091 31.2091 39 29 39H4C1.79086 39 0 37.2091 0 35V0Z" />
-    </mask>
-    <path mask="url(#path-1-inside-1_8_19)" fill="white" d="M0 0H33H0ZM37 35C37 39.4183 33.4183 43 29 43H4C-0.418278 43 -4 39.4183 -4 35H4H29H37ZM4 43C-0.418278 43 -4 39.4183 -4 35V0H4V35V43ZM37 0V35C37 39.4183 33.4183 43 29 43V35V0H37Z" />
-    <path strokeWidth={4} stroke="white" d="M12 6L12 29" />
-    <path strokeWidth={4} stroke="white" d="M21 6V29" />
-  </svg>
-</button>
-
-         </> 
+            {/* From Uiverse.io by Shubh0408 */}
+            <button
+              onClick={handleDelete}
+              type="button"
+              className="group cursor-pointer relative flex h-14 w-14 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-red-800 bg-red-400 hover:bg-red-600"
+            >
+              <svg
+                viewBox="0 0 1.625 1.625"
+                className="absolute -top-7 fill-white delay-100 group-hover:top-6 group-hover:animate-[spin_1.4s] group-hover:duration-1000"
+                height={15}
+                width={15}
+              >
+                <path d="M.471 1.024v-.52a.1.1 0 0 0-.098.098v.618c0 .054.044.098.098.098h.487a.1.1 0 0 0 .098-.099h-.39c-.107 0-.195 0-.195-.195" />
+                <path d="M1.219.601h-.163A.1.1 0 0 1 .959.504V.341A.033.033 0 0 0 .926.309h-.26a.1.1 0 0 0-.098.098v.618c0 .054.044.098.098.098h.487a.1.1 0 0 0 .098-.099v-.39a.033.033 0 0 0-.032-.033" />
+                <path d="m1.245.465-.15-.15a.02.02 0 0 0-.016-.006.023.023 0 0 0-.023.022v.108c0 .036.029.065.065.065h.107a.023.023 0 0 0 .023-.023.02.02 0 0 0-.007-.016" />
+              </svg>
+              <svg
+                width={16}
+                fill="none"
+                viewBox="0 0 39 7"
+                className="origin-right duration-500 group-hover:rotate-90"
+              >
+                <line strokeWidth={4} stroke="white" y2={5} x2={39} y1={5} />
+                <line
+                  strokeWidth={3}
+                  stroke="white"
+                  y2="1.5"
+                  x2="26.0357"
+                  y1="1.5"
+                  x1={12}
+                />
+              </svg>
+              <svg width={16} fill="none" viewBox="0 0 33 39">
+                <mask fill="white" id="path-1-inside-1_8_19">
+                  <path d="M0 0H33V35C33 37.2091 31.2091 39 29 39H4C1.79086 39 0 37.2091 0 35V0Z" />
+                </mask>
+                <path
+                  mask="url(#path-1-inside-1_8_19)"
+                  fill="white"
+                  d="M0 0H33H0ZM37 35C37 39.4183 33.4183 43 29 43H4C-0.418278 43 -4 39.4183 -4 35H4H29H37ZM4 43C-0.418278 43 -4 39.4183 -4 35V0H4V35V43ZM37 0V35C37 39.4183 33.4183 43 29 43V35V0H37Z"
+                />
+                <path strokeWidth={4} stroke="white" d="M12 6L12 29" />
+                <path strokeWidth={4} stroke="white" d="M21 6V29" />
+              </svg>
+            </button>
+          </>
         )}
-
         {/* =========================
             Footer
         ========================= */}
-
         <Card.Footer className="py3 mt-3 border-t border-violet-500">
           <div className="flex justify-between w-full my-3">
             <div className="flex gap-2.5">
-              <Like1 size={40} color="#092" />
+              {/* زر اللايك */}
+              {/* زر اللايك */}
+              <button
+                type="button"
+                onClick={() => handleLike()}
+                className="cursor-pointer hover:scale-110 transition-transform flex items-center gap-1.5"
+              >
+                <Like1
+                  size={32}
+                  color={isLikedByMe ? "#2dc442" : "#64748b"}
+                  variant={isLikedByMe ? "Bold" : "Outline"} // 👈 هنا السر: Bold يجعلها Filled
+                />
 
+                {/* عرض عدد اللايكات بجانب الأيقونة */}
+                <span
+                  className={
+                    isLikedByMe ? "text-[#2dc442] font-bold" : "text-slate-500"
+                  }
+                >
+                  {post.likes?.length || 0}
+                </span>
+              </button>
               <Share size={40} color="#092" />
             </div>
 
@@ -435,17 +494,13 @@ export default function PostCard({
             </div>
           </div>
         </Card.Footer>
-
         {/* =========================
             Top Comment
         ========================= */}
-
-{topComment && !PostDetails && (
-  <Coment
-    comment={topComment}
-    postId={post._id}
-  />
-)}      </Card>
+        {topComment && !PostDetails && (
+          <Coment comment={topComment} postId={post._id} />
+        )}{" "}
+      </Card>
     </div>
   );
 }

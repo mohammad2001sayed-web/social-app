@@ -22,3 +22,23 @@ export async function HandleAllPost(): Promise<Post[]> {
     return [];
   }
 }
+
+
+
+
+
+export async function toggleLikePost(postId: string) {
+  const token = localStorage.getItem("tkn");
+  const baseUrl = import.meta.env.VITE_BASE_URL;
+
+  // الـ API هنا مشهور إنه بيستخدم PUT لللايك/الأنلايك (بيعمل toggle تلقائي)
+  return await axios.put(
+    `${baseUrl}/posts/${postId}/like`,
+    {},
+    {
+      headers: {
+        token: token || "",
+      },
+    }
+  );
+}
