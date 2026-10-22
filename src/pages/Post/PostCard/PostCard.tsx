@@ -67,15 +67,19 @@ export default function PostCard({
     },
   });
 
-  const { mutate: handleLike } = useMutation({
-    mutationFn: () => toggleLikePost(_id),
-    onSuccess: () => {
-      // تحديث بيانات البوستات لتعكس عدد اللايكات الجديدة
-      queryClient.invalidateQueries({ queryKey: ["allPost"] });
-      queryClient.invalidateQueries({ queryKey: ["PostDetails", _id] });
-    },
-  });
-  // 1. تحقق هل البوست مُعجب به من قِبل المستخدم الحالي أم لا
+const { mutate: handleLike } = useMutation({
+  mutationFn: () => toggleLikePost(_id),
+  onSuccess: () => {
+    // 1. تحديث الصفحة الرئيسية
+    queryClient.invalidateQueries({ queryKey: ["allPost"] });
+
+    // 2. تحديث صفحة تفاصيل البوست
+    queryClient.invalidateQueries({ queryKey: ["PostDetails", _id] });
+
+    // 3. 👈 تحديث صفحة منشورات المستخدم (هذا هو السطر الناقص!)
+    queryClient.invalidateQueries({ queryKey: ["userPosts"] });
+  },
+});  // 1. تحقق هل البوست مُعجب به من قِبل المستخدم الحالي أم لا
 const userId = userData?._id || userData?.id;
 
 const isLikedByMe = post.likes?.some((item: any) => 
@@ -246,7 +250,8 @@ const isLikedByMe = post.likes?.some((item: any) =>
           {/* =========================
               User Info
           ========================= */}
-
+          
+          <Link to={`/user-posts/${post.user._id}`}>
           <Card.Title className="flex items-center gap-3 mb-3 pb-3 border-b-2 border-blue-900">
             <Avatar>
               <Avatar.Image alt={name} src={photo} />
@@ -262,6 +267,8 @@ const isLikedByMe = post.likes?.some((item: any) =>
               </p>
             </div>
           </Card.Title>
+          </Link>
+
 
           {/* =========================
               Edit Button
