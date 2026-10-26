@@ -1,4 +1,4 @@
-import * as zod from "zod"
+import * as zod from "zod";
 export const ZodRegister = zod
   .object({
     name: zod
@@ -8,14 +8,26 @@ export const ZodRegister = zod
       .string()
       .regex(/^[a-zA-Z\s]{3,20}$/, "Name is pattern is not valid"),
     email: zod.email(),
+
     dateOfBirth: zod.string().refine((value) => {
+      if (!value) return false;
+
       const selectedDate = new Date(value);
       const today = new Date();
 
-      if (today.getFullYear() - selectedDate.getFullYear() > 21) {
-        return true;
+      let age = today.getFullYear() - selectedDate.getFullYear();
+      const monthDiff = today.getMonth() - selectedDate.getMonth();
+
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < selectedDate.getDate())
+      ) {
+        age--;
       }
-    }, "يجب أن يكون عمرك 21 سنة أو أكثر"),
+
+      return age >= 18; // 👈 أضفنا return صريح في كل الحالات
+    }, "يجب أن يكون عمرك 18 سنة أو أكثر"),
+
     gender: zod.enum(["male", "female"]),
     password: zod
       .string()

@@ -68,7 +68,8 @@ export default function Register() {
           <Label>name</Label>
           <Input
             {...register("name")}
-            className={`focus:ring-amber-300`}
+            autoCorrect="off"
+            autoComplete="name"
             placeholder="Enter your name"
           />
           {errors.name && (
@@ -82,8 +83,9 @@ export default function Register() {
           <Label>username</Label>
           <Input
             {...register("username")}
-            className={`focus:ring-amber-300`}
-            placeholder="Enter your username"
+            autoCorrect="off"
+            autoComplete="name"
+            placeholder="Enter your name"
           />
         </TextField>
         {/* email Input */}
@@ -91,7 +93,9 @@ export default function Register() {
           <Label>email</Label>
           <Input
             {...register("email")}
-            className={`focus:ring-amber-300`}
+            autoCapitalize="none" // 👈 يمنع الحرف الكبير التلقائي
+            autoCorrect="off" // 👈 يمنع التصحيح التلقائي
+            autoComplete="email"
             placeholder="Enter your email"
           />
           {errors.email && (
@@ -105,7 +109,9 @@ export default function Register() {
           <Label>password</Label>
           <Input
             {...register("password")}
-            className={`focus:ring-amber-300`}
+            autoCapitalize="none" // 👈 مهم جداً للباسورد
+            autoCorrect="off"
+            autoComplete="new-password"
             placeholder="Enter your password"
           />
         </TextField>
@@ -132,11 +138,9 @@ export default function Register() {
               <Label>Date of Birth</Label>
               <Input
                 {...field}
-                className={
-                  fieldState.error
-                    ? `focus:ring-amber-900`
-                    : `focus:ring-amber-300`
-                }
+                type="date"
+                max={new Date().toISOString().split("T")[0]} // 👈 لا يسمح بتاريخ في المستقبل
+                min="1970-01-01" // 👈 لا يسمح بتاريخ قديم جداً
                 placeholder="Enter your date of birth"
               />
               {fieldState.error && (
@@ -188,7 +192,11 @@ export default function Register() {
         />
 
         <div className="flex flex-col gap-2">
-          <Button className={`w-full text-2xl  bg-emerald-950 text-emerald-400 border border-emerald-400 border-b-4 font-medium overflow-hidden relative px-4 py-2 rounded-md hover:brightness-150 hover:border-t-4 hover:border-b active:opacity-75`} type="submit" isPending={isSubmitting}>
+          <Button
+            className={`w-full text-2xl  bg-emerald-950 text-emerald-400 border border-emerald-400 border-b-4 font-medium overflow-hidden relative px-4 py-2 rounded-md hover:brightness-150 hover:border-t-4 hover:border-b active:opacity-75`}
+            type="submit"
+            isPending={isSubmitting}
+          >
             {isSubmitting ? (
               <Spinner color="current" size="lg" />
             ) : (
@@ -197,7 +205,7 @@ export default function Register() {
               </>
             )}
           </Button>
-          <Button className={`w-full text-red-500 text-2xl `} type="reset" >
+          <Button className={`w-full text-red-500 text-2xl `} type="reset">
             Reset
           </Button>
         </div>
