@@ -64,12 +64,13 @@ export default function Register() {
         <h1 className="text-center text-2xl font-bold">Register</h1>
 
         {/* name Input */}
+        {/* name Input */}
         <TextField isRequired type="text" isInvalid={!!errors.name}>
           <Label>name</Label>
           <Input
             {...register("name")}
             autoCorrect="off"
-            autoComplete="name"
+            autoCapitalize="words"
             placeholder="Enter your name"
           />
           {errors.name && (
@@ -78,23 +79,31 @@ export default function Register() {
             </span>
           )}
         </TextField>
+
         {/* username Input */}
         <TextField isRequired type="text" isInvalid={!!errors.username}>
           <Label>username</Label>
           <Input
             {...register("username")}
             autoCorrect="off"
-            autoComplete="name"
-            placeholder="Enter your name"
+            autoCapitalize="none"
+            placeholder="Enter your username"
           />
+          {/* 👇 كان ناقص */}
+          {errors.username && (
+            <span className="text-red-500 text-sm mt-1">
+              {errors.username.message}
+            </span>
+          )}
         </TextField>
+
         {/* email Input */}
         <TextField isRequired type="email" isInvalid={!!errors.email}>
           <Label>email</Label>
           <Input
             {...register("email")}
-            autoCapitalize="none" // 👈 يمنع الحرف الكبير التلقائي
-            autoCorrect="off" // 👈 يمنع التصحيح التلقائي
+            autoCapitalize="none"
+            autoCorrect="off"
             autoComplete="email"
             placeholder="Enter your email"
           />
@@ -104,23 +113,33 @@ export default function Register() {
             </span>
           )}
         </TextField>
+
         {/* password Input */}
         <TextField isRequired type="password" isInvalid={!!errors.password}>
           <Label>password</Label>
           <Input
             {...register("password")}
-            autoCapitalize="none" // 👈 مهم جداً للباسورد
+            autoCapitalize="none"
             autoCorrect="off"
             autoComplete="new-password"
             placeholder="Enter your password"
           />
+          {/* 👇 كان ناقص */}
+          {errors.password && (
+            <span className="text-red-500 text-sm mt-1">
+              {errors.password.message}
+            </span>
+          )}
         </TextField>
+
         {/* confirm password Input */}
         <TextField isRequired type="password" isInvalid={!!errors.rePassword}>
           <Label>Confirm Password</Label>
           <Input
             {...register("rePassword")}
-            className={`focus:ring-amber-300`}
+            autoCapitalize="none"
+            autoCorrect="off"
+            autoComplete="new-password"
             placeholder="Confirm your password"
           />
           {errors.rePassword && (
