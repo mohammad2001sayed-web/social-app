@@ -121,7 +121,7 @@ export default function CreatePost({ user }: { user: User }) {
               onClick={() => upfile.current?.click()}
               size="32"
               color="#FF8A65"
-              className="cursor-pointer hover:opacity-80 transition-opacity"
+              className="cursor-pointer grow md:grow-0 hover:opacity-80 transition-opacity"
             />
 
             {/* 👇 جواه هنا أحسن */}
