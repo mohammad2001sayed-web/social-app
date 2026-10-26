@@ -104,7 +104,7 @@ export default function CreatePost({ user }: { user: User }) {
           </h2>
         </div>
         <Form onSubmit={handleSubmit(CreateUserPost)}>
-          <div className="flex flex-row items-center justify-center gap-3 mb-3">
+          <div className="flex flex-col md:flex-row items-center gap-3 mb-3">
             <Avatar>
               <Avatar.Image alt={name} src={photo} />
               <Avatar.Fallback>JD</Avatar.Fallback>
@@ -112,7 +112,7 @@ export default function CreatePost({ user }: { user: User }) {
 
             <Input
               {...register("body")}
-              className="grow"
+              className="md:grow"
               type="text"
               placeholder="Create your post..."
             />
@@ -121,7 +121,7 @@ export default function CreatePost({ user }: { user: User }) {
               onClick={() => upfile.current?.click()}
               size="32"
               color="#FF8A65"
-              className="cursor-pointer grow md:grow-0 hover:opacity-80 transition-opacity"
+              className="cursor-pointer hover:opacity-80 transition-opacity"
             />
 
             {/* 👇 جواه هنا أحسن */}
