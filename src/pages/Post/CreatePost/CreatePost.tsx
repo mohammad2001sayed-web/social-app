@@ -104,7 +104,7 @@ export default function CreatePost({ user }: { user: User }) {
           </h2>
         </div>
         <Form onSubmit={handleSubmit(CreateUserPost)}>
-          <div className="flex flex-col md:flex-row items-center gap-3 mb-3">
+          <div className="flex flex-row items-center justify-center gap-3 mb-3">
             <Avatar>
               <Avatar.Image alt={name} src={photo} />
               <Avatar.Fallback>JD</Avatar.Fallback>
