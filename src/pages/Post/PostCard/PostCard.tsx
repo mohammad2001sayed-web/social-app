@@ -263,7 +263,7 @@ const isLikedByMe = post.likes?.some((item: any) =>
               <h2>{name}</h2>
 
               <p>
-                {new Date(createdAt).toLocaleDateString().replace(/\//g, "-")}
+                {new Date(createdAt).toLocaleDateString("ca-ES").replace(/\//g, "-")}
               </p>
             </div>
           </Card.Title>
