@@ -3,20 +3,19 @@ import type { RigisterResponse } from "./register.interface";
 import type { RegisterDataForm } from "./rigester.validation";
 
 export async function sendUserRigister(userData: RegisterDataForm) {
+  // ✅ بنبعت كل البيانات بما فيها rePassword لأن السيرفر محتاجها
   try {
     const res = await axios.post<RigisterResponse>(
       `${import.meta.env.VITE_BASE_URL}/users/signup`,
       userData,
     );
-    console.log(res.data.message);
-    return res.data.message; //string
+    return res.data.message;
   } catch (error) {
-  if (axios.isAxiosError(error)) {
-    throw new Error(
-      error.response?.data?.message || "Something went wrong"
-    );
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        error.response?.data?.message || "Something went wrong"
+      );
+    }
+    throw new Error("Something went wrong");
   }
-
-  throw new Error("Something went wrong");
-}
 }

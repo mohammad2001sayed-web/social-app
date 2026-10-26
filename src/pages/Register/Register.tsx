@@ -69,6 +69,7 @@ export default function Register() {
           <Label>name</Label>
           <Input
             {...register("name")}
+            autoComplete="name"
             autoCorrect="off"
             autoCapitalize="words"
             placeholder="Enter your name"
@@ -85,6 +86,7 @@ export default function Register() {
           <Label>username</Label>
           <Input
             {...register("username")}
+            autoComplete="username"
             autoCorrect="off"
             autoCapitalize="none"
             placeholder="Enter your username"
@@ -102,9 +104,9 @@ export default function Register() {
           <Label>email</Label>
           <Input
             {...register("email")}
+            autoComplete="email"
             autoCapitalize="none"
             autoCorrect="off"
-            autoComplete="email"
             placeholder="Enter your email"
           />
           {errors.email && (
@@ -119,9 +121,9 @@ export default function Register() {
           <Label>password</Label>
           <Input
             {...register("password")}
+            autoComplete="new-password"
             autoCapitalize="none"
             autoCorrect="off"
-            autoComplete="new-password"
             placeholder="Enter your password"
           />
           {/* 👇 كان ناقص */}
@@ -137,9 +139,9 @@ export default function Register() {
           <Label>Confirm Password</Label>
           <Input
             {...register("rePassword")}
+            autoComplete="new-password"
             autoCapitalize="none"
             autoCorrect="off"
-            autoComplete="new-password"
             placeholder="Confirm your password"
           />
           {errors.rePassword && (
@@ -173,43 +175,40 @@ export default function Register() {
         <Controller
           name="gender"
           control={control}
-          render={({ field, fieldState }) => {
-            {
-              /* Gender Input */
-            }
-            return (
-              <Select
-                placeholder="Select your gender"
-                {...field}
-                isInvalid={!!fieldState.error}
-              >
-                <Label>Gender</Label>
-                <Select.Trigger>
-                  <Select.Value />
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover>
-                  <ListBox>
-                    <ListBox.Item id="male" textValue="Male">
-                      Male
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                    <ListBox.Item id="female" textValue="Female">
-                      Female
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                  </ListBox>
-                </Select.Popover>
-                {fieldState.error && (
-                  <span className="text-red-500 text-sm mt-1">
-                    {fieldState.error.message}
-                  </span>
-                )}
-              </Select>
-            );
-          }}
+          render={({ field, fieldState }) => (
+            <Select
+              placeholder="Select your gender"
+              isInvalid={!!fieldState.error}
+              // 👇 بدل {...field} اللي بيسبب المشكلة
+              selectedKey={field.value}
+              onSelectionChange={(key) => field.onChange(String(key))}
+              onBlur={field.onBlur}
+            >
+              <Label>Gender</Label>
+              <Select.Trigger>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  <ListBox.Item id="male" textValue="Male">
+                    Male
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="female" textValue="Female">
+                    Female
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                </ListBox>
+              </Select.Popover>
+              {fieldState.error && (
+                <span className="text-red-500 text-sm mt-1">
+                  {fieldState.error.message}
+                </span>
+              )}
+            </Select>
+          )}
         />
-
         <div className="flex flex-col gap-2">
           <Button
             className={`w-full text-2xl  bg-emerald-950 text-emerald-400 border border-emerald-400 border-b-4 font-medium overflow-hidden relative px-4 py-2 rounded-md hover:brightness-150 hover:border-t-4 hover:border-b active:opacity-75`}
