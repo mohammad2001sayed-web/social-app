@@ -71,15 +71,6 @@ export default function Register() {
             className={`focus:ring-amber-300`}
             placeholder="Enter your name"
           />
-          {/* <Input
-            {...register("name",{ 
-              required: {value: true, message: "Name is required"},
-              pattern: {value: /^[a-zA-Z\s]{3,20}$/, message: "Name is pattern is not valid"}
-            
-            })}
-            className={`focus:ring-amber-300`}
-            placeholder="Enter your name"
-          /> */}
           {errors.name && (
             <span className="text-red-500 text-sm mt-1">
               {errors.name.message}
@@ -136,39 +127,6 @@ export default function Register() {
         <Controller
           name="dateOfBirth"
           control={control}
-          //   rules={{
-          //     required: {value:true, message: "تاريخ الميلاد مطلوب"},
-          // validate: (value) => {
-          //   if (!value) return true;
-
-          //   const selectedDate = new Date(value);
-          //   const today = new Date();
-          //   const birthYear = selectedDate.getFullYear();
-
-          //   // 1. التأكد من أن السنة منطقية (ليست 0026 مثلاً)
-          //   if (birthYear < 1970) {
-          //     return "يرجى كتابة سنة ميلاد صحيحة";
-          //   }
-
-          //   // 2. التأكد من أن التاريخ ليس في المستقبل
-          //   if (selectedDate > today) {
-          //     return "تاريخ الميلاد لا يمكن أن يكون في المستقبل";
-          //   }
-
-          //   // 3. حساب العمر بدقة
-          //   let age = today.getFullYear() - birthYear;
-          //   const monthDiff = today.getMonth() - selectedDate.getMonth();
-
-          //   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < selectedDate.getDate())) {
-          //     age--;
-          //   }
-
-          //   if (age < 21) {
-          //     return "يجب أن يكون عمرك 21 سنة أو أكثر";
-          //   }
-
-          //   return true;
-          // }  }}
           render={({ field, fieldState }) => (
             <TextField isRequired isInvalid={!!fieldState.error} type="date">
               <Label>Date of Birth</Label>
@@ -192,12 +150,6 @@ export default function Register() {
         <Controller
           name="gender"
           control={control}
-          //  rules={
-          //   {
-          //     required:{value:true, message: " مطلوب"},
-          //     // pattern:{value:/"male" |"famale"/i, message: " مطلوب"},
-          //   }
-          // }
           render={({ field, fieldState }) => {
             {
               /* Gender Input */
