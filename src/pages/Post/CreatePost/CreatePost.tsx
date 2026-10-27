@@ -129,7 +129,7 @@ export default function CreatePost({ user }: { user: User }) {
               ref={upfile}
               onChange={handleImageChange}
               type="file"
-              accept=".jpg,.jpeg,.png,.webp,.gif"
+              accept="image/*"
               hidden
             />
           </div>
