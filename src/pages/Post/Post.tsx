@@ -52,7 +52,7 @@ export default function Post() {
             <PostCard key={post._id || post.id} post={post} />
           ))
         ) : (
-          <p className="text-white text-lg">لا توجد منشورات حتى الآن</p>
+          <p className="text-white text-lg">لا توجد منشورات حتى الآن الرجاء اعادة تسجيل الدخول مرة اخرى </p>
         )}
       </div>
     </div>
