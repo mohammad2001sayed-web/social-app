@@ -61,7 +61,7 @@
     }
 
     return (
-      <div className="fixed bottom-0 left-0 w-full bg-white dark:bg-[#18181B] border-t p-4">
+      <div className="absolute bottom-0 left-0 w-full bg-white dark:bg-[#18181B] border-t p-4">
         <div className="w-9/12 mx-auto flex gap-3 items-center">
 
           <Input
