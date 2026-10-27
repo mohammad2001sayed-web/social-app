@@ -6,6 +6,7 @@ import { useContext, useState } from "react";
 import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router";
 
 interface UpdateCommentForm {
   content?: string;
@@ -162,6 +163,7 @@ export default function Coment({
             COMMENT HEADER
         ========================= */}
 
+          <Link to={`/user-posts/${comment.commentCreator._id}`}>
         <Card.Title className="flex items-center gap-3 mb-3 pb-3 border-b-2 border-blue-900">
           <Avatar>
             <Avatar.Image alt={name} src={photo} />
@@ -177,6 +179,7 @@ export default function Coment({
             </p>
           </div>
         </Card.Title>
+          </Link>
 
         {/* =========================
             COMMENT BODY
