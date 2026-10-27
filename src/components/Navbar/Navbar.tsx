@@ -13,9 +13,10 @@ interface NavbarProps {
 export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
   const [isdropdown, setisdropdown] = useState<boolean>(false);
   const [isopen, setisopen] = useState<boolean>(false);
-  
+
   // 1. استدعاء userToken و setUserToken من الـ AuthContext
-  const { userData, setuserData, getUserData, userToken, setUserToken } = useContext(AuthContext);
+  const { userData, setuserData, getUserData, userToken, setUserToken } =
+    useContext(AuthContext);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleChangePhoto() {
@@ -27,17 +28,14 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
       const formData = new FormData();
       formData.append("photo", file);
 
-      const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL;
+      const baseUrl =
+        import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL;
 
-      await axios.put(
-        `${baseUrl}/users/upload-photo`,
-        formData,
-        {
-          headers: {
-            token: localStorage.getItem("tkn"),
-          },
-        }
-      );
+      await axios.put(`${baseUrl}/users/upload-photo`, formData, {
+        headers: {
+          token: localStorage.getItem("tkn"),
+        },
+      });
 
       const updatedUser = await getUserData();
       setuserData(updatedUser);
@@ -100,9 +98,14 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
                 id="user-menu-button"
               >
                 <Avatar className="ring-2 ring-indigo-500/40 shadow-md">
-                  <Avatar.Image alt={userData?.name || "User"} src={userData?.photo} />
+                  <Avatar.Image
+                    alt={userData?.name || "User"}
+                    src={userData?.photo}
+                  />
                   <Avatar.Fallback>
-                    {userData?.name ? userData.name.substring(0, 2).toUpperCase() : "U"}
+                    {userData?.name
+                      ? userData.name.substring(0, 2).toUpperCase()
+                      : "U"}
                   </Avatar.Fallback>
                 </Avatar>
                 <input
@@ -120,15 +123,17 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
               </button>
             ) : (
               <div className="flex gap-2.5">
-                <Link to="/login">
-                  <Button className="bg-amber-200 ms-2 hover:bg-blue-600">
-                    Login
-                  </Button>
+                <Link
+                  to="/login"
+                  className="bg-teal-400 hover:bg-teal-600 rounded-md px-2 py-0.5 transition-colors"
+                >
+                  <Button className=" pointer-events-none">Login</Button>
                 </Link>
-                <Link to="/register">
-                  <Button className="bg-taupe-600 hover:bg-amber-700">
-                    Register
-                  </Button>
+                <Link
+                  to="/register"
+                  className="bg-violet-400 hover:bg-violet-500 dark:hover:bg-violet-600 rounded-md px-2 py-0.5 transition-colors"
+                >
+                  <Button className=" pointer-events-none">Register</Button>
                 </Link>
               </div>
             )}
@@ -141,7 +146,9 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
               id="user-dropdown"
             >
               <div className="px-4 py-3 text-sm border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-[#091527]/50">
-                <span className="block font-semibold">{userData?.name || "User"}</span>
+                <span className="block font-semibold">
+                  {userData?.name || "User"}
+                </span>
                 <span className="block truncate text-slate-500 dark:text-slate-400 text-xs mt-0.5">
                   {userData?.email || ""}
                 </span>
