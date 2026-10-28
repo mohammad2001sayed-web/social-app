@@ -97,7 +97,6 @@ export default function Coment({
     handleSubmit,
     reset,
     onSubmit,
-    formattedDate,
     showReplyInput,
     setShowReplyInput,
     showReplies,
