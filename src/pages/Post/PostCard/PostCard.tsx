@@ -1,10 +1,18 @@
-import { Avatar, Card } from "@heroui/react";
+import { Avatar } from "@heroui/react";
 import type { Post } from "../Post.interface";
-import { Like1, MessageText, Share, DocumentUpload } from "iconsax-react";
+import {
+  Like1,
+  MessageText,
+  Share,
+  Gallery,
+  More,
+  Edit2,
+  Trash,
+} from "iconsax-react";
 import Coment from "../../../components/Coment/Coment";
 import { Link } from "react-router";
 import { AuthContext } from "../../../context/CounterContext/AuthContext/AuthContext";
-import { useContext, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { FnUpdatePost, FnDeletePost } from "../CreatPost.abi";
@@ -18,6 +26,7 @@ export default function PostCard({
   PostDetails?: boolean;
 }) {
   const { userData } = useContext(AuthContext);
+  const queryClient = useQueryClient();
 
   const {
     _id,
@@ -29,81 +38,78 @@ export default function PostCard({
     topComment,
   } = post;
 
-  // هل البوست بتاعي؟
-  const isMyPost = userData?.id === post.user._id;
+  const userId = userData?._id || userData?.id;
+  const isMyPost = userId === post.user._id;
 
-  const queryClient = useQueryClient();
+  const isLikedByMe = post.likes?.some(
+    (item: any) =>
+      (typeof item === "string" ? item : item?._id || item?.id) === userId,
+  );
 
-  // Edit mode
+  // =========================
+  // UI state
+  // =========================
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // النص الجديد
   const [updatedBody, setUpdatedBody] = useState(body || "");
-
-  // الصورة الجديدة
   const [updatedImage, setUpdatedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
 
-  // Preview للصورة الجديدة
-  const [imagePreview, setImagePreview] = useState<string>("");
-
-  // input بتاع الصورة
+  const menuRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // =========================
-  // Delete Post Mutation
-  // =========================
+  // اقفل المنيو لما تدوس برّه أو Escape
+  useEffect(() => {
+    if (!menuOpen) return;
 
-  const { mutateAsync: deletePost } = useMutation({
-    mutationFn: FnDeletePost,
+    function onClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
 
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  // تنظيف الـ preview
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
+  // =========================
+  // Mutations
+  // =========================
+  const { mutate: handleLike } = useMutation({
+    mutationFn: () => toggleLikePost(_id),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["allPost"],
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["PostDetails", post._id],
-      });
+      queryClient.invalidateQueries({ queryKey: ["allPost"] });
+      queryClient.invalidateQueries({ queryKey: ["PostDetails", _id] });
+      queryClient.invalidateQueries({ queryKey: ["userPosts"] });
     },
   });
 
-const { mutate: handleLike } = useMutation({
-  mutationFn: () => toggleLikePost(_id),
-  onSuccess: () => {
-    // 1. تحديث الصفحة الرئيسية
-    queryClient.invalidateQueries({ queryKey: ["allPost"] });
+  const { mutateAsync: deletePost, isPending: isDeleting } = useMutation({
+    mutationFn: FnDeletePost,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["allPost"] });
+      queryClient.invalidateQueries({ queryKey: ["PostDetails", _id] });
+      queryClient.invalidateQueries({ queryKey: ["userPosts"] });
+    },
+  });
 
-    // 2. تحديث صفحة تفاصيل البوست
-    queryClient.invalidateQueries({ queryKey: ["PostDetails", _id] });
-
-    // 3. 👈 تحديث صفحة منشورات المستخدم (هذا هو السطر الناقص!)
-    queryClient.invalidateQueries({ queryKey: ["userPosts"] });
-  },
-});  // 1. تحقق هل البوست مُعجب به من قِبل المستخدم الحالي أم لا
-const userId = userData?._id || userData?.id;
-
-const isLikedByMe = post.likes?.some((item: any) => 
-  (typeof item === "string" ? item : item?._id || item?.id) === userId
-);
-
-  function handleDelete() {
-    if (!confirm("Are you sure you want to delete this post?")) {
-      return;
-    }
-
-    toast.promise(deletePost(post._id), {
-      loading: "Deleting post...",
-      success: "Post deleted successfully!",
-      error: (err: any) =>
-        err?.response?.data?.message || err?.message || "Failed to delete post",
-    });
-  }
-
-  // =========================
-  // Update Post Mutation
-  // =========================
-
-  const { mutateAsync: updatePost } = useMutation({
+  const { mutateAsync: updatePost, isPending: isUpdating } = useMutation({
     mutationFn: ({
       postId,
       body,
@@ -113,109 +119,41 @@ const isLikedByMe = post.likes?.some((item: any) =>
       body?: string;
       file?: File;
     }) => FnUpdatePost(postId, body, file),
-
     onSuccess: async () => {
-      // تحديث كل البوستات
-      await queryClient.invalidateQueries({
-        queryKey: ["allPost"],
-      });
-
-      // تحديث تفاصيل البوست
-      await queryClient.invalidateQueries({
-        queryKey: ["PostDetails", _id],
-      });
-
-      // إغلاق Edit
-      setIsEditing(false);
-
-      // تنظيف الصورة الجديدة
-      setUpdatedImage(null);
-      setImagePreview("");
-
-      // تنظيف input الصورة
-      if (imageInputRef.current) {
-        imageInputRef.current.value = "";
-      }
+      await queryClient.invalidateQueries({ queryKey: ["allPost"] });
+      await queryClient.invalidateQueries({ queryKey: ["PostDetails", _id] });
+      await queryClient.invalidateQueries({ queryKey: ["userPosts"] });
+      closeEdit();
     },
   });
 
   // =========================
-  // اختيار صورة جديدة
+  // Handlers
   // =========================
+  function openEdit() {
+    setMenuOpen(false);
+    setUpdatedBody(body || "");
+    setUpdatedImage(null);
+    setImagePreview("");
+    setIsEditing(true);
+  }
+
+  function closeEdit() {
+    setIsEditing(false);
+    setUpdatedImage(null);
+    setImagePreview("");
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  }
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-
     if (!file) return;
-
-    // لو فيه Preview قديم
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
-    }
-
-    // نخزن الصورة
     setUpdatedImage(file);
-
-    // نعمل Preview
-    const previewUrl = URL.createObjectURL(file);
-
-    setImagePreview(previewUrl);
+    setImagePreview(URL.createObjectURL(file));
   }
-
-  // =========================
-  // فتح Edit
-  // =========================
-
-  function handleEdit() {
-    setIsEditing(true);
-
-    // نرجع النص الأصلي
-    setUpdatedBody(body || "");
-
-    // نمسح أي صورة جديدة قديمة
-    setUpdatedImage(null);
-    setImagePreview("");
-
-    // تنظيف input
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
-    }
-  }
-
-  // =========================
-  // Cancel Edit
-  // =========================
-
-  function handleCancel() {
-    // رجّع النص الأصلي
-    setUpdatedBody(body || "");
-
-    // امسح الصورة الجديدة
-    setUpdatedImage(null);
-
-    // امسح Preview
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
-    }
-
-    setImagePreview("");
-
-    // تنظيف input
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
-    }
-
-    // اقفل Edit
-    setIsEditing(false);
-  }
-
-  // =========================
-  // Update
-  // =========================
 
   function handleUpdate() {
-    // لو مفيش نص ولا صورة
-    if (!updatedBody.trim() && !updatedImage) {
+    if (!updatedBody.trim() && !updatedImage && !image) {
       toast.error("Please write something or choose an image");
       return;
     }
@@ -223,18 +161,12 @@ const isLikedByMe = post.likes?.some((item: any) =>
     toast.promise(
       updatePost({
         postId: _id,
-
-        // لو فاضي مش هيتبعت للـ API
         body: updatedBody,
-
-        // لو مفيش صورة مش هيتبعت
         file: updatedImage || undefined,
       }),
       {
-        loading: "Updating post...",
-
-        success: "Post updated successfully!",
-
+        loading: "Saving changes...",
+        success: "Post updated",
         error: (err: any) =>
           err?.response?.data?.message ||
           err?.message ||
@@ -243,271 +175,303 @@ const isLikedByMe = post.likes?.some((item: any) =>
     );
   }
 
+  function handleDelete() {
+    toast
+      .promise(deletePost(_id), {
+        loading: "Deleting post...",
+        success: "Post deleted",
+        error: (err: any) =>
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to delete post",
+      })
+      .finally(() => setConfirmOpen(false));
+  }
+
+  const formattedDate = new Date(createdAt).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const likesCount = post.likes?.length || 0;
+
   return (
     <div className="container mx-auto px-4">
-      <Card className="w-full dark:bg-[#18181B] bg-gray-200">
-        <Card.Header>
-          {/* =========================
-              User Info
-          ========================= */}
-          
-          <Link to={`/user-posts/${post.user._id}`}>
-          <Card.Title className="flex items-center gap-3 mb-3 pb-3 border-b-2 border-blue-900">
+      <article className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#18181B]">
+        {/* =========================
+            Header: user + three dots
+        ========================= */}
+        <header className="flex items-center gap-3 px-4 pt-4">
+          <Link
+            to={`/user-posts/${post.user._id}`}
+            className="flex min-w-0 flex-1 items-center gap-3"
+          >
             <Avatar>
               <Avatar.Image alt={name} src={photo} />
-
-              <Avatar.Fallback>JD</Avatar.Fallback>
+              <Avatar.Fallback>
+                {name ? name.substring(0, 2).toUpperCase() : "U"}
+              </Avatar.Fallback>
             </Avatar>
 
-            <div>
-              <h2>{name}</h2>
-
-              <p>
-                {new Date(createdAt).toLocaleDateString("ca-ES").replace(/\//g, "-")}
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-semibold text-gray-900 hover:underline dark:text-gray-100">
+                {name}
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {formattedDate}
               </p>
             </div>
-          </Card.Title>
           </Link>
 
-
-          {/* =========================
-              Edit Button
-          ========================= */}
-
           {isMyPost && !isEditing && (
-            <button
-              type="button"
-              className="ml-auto dark:border-[#00ffe5] py-1 btn-178 my-3"
-              onClick={handleEdit}
-            >
-              Edit Post
-            </button>
-          )}
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Post options"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800"
+              >
+                <More size="22" color="currentColor" />
+              </button>
 
-          <div>
-            {/* =========================
-                Current Image
-            ========================= */}
-
-            {!isEditing && image && (
-              <img className="w-full" src={image} alt={name} />
-            )}
-
-            {/* =========================
-                Edit Mode
-            ========================= */}
-
-            {isEditing ? (
-              <div className="flex flex-col gap-3">
-                {/* =========================
-                    Edit Text
-                ========================= */}
-
-                <input
-                  value={updatedBody}
-                  onChange={(e) => setUpdatedBody(e.target.value)}
-                  className="w-full dark:text-amber-300 p-3 rounded border"
-                  type="text"
-                  placeholder="Update your post..."
-                />
-
-                {/* =========================
-                    Image Upload
-                ========================= */}
-
-                <div className="flex items-center gap-3">
+              {menuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-30 mt-1 w-48 overflow-hidden rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-[#0f1f38]"
+                >
                   <button
                     type="button"
-                    onClick={() => imageInputRef.current?.click()}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    role="menuitem"
+                    onClick={openEdit}
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800"
                   >
-                    <DocumentUpload size="22" />
-                    Change Image
+                    <Edit2 size="18" color="currentColor" />
+                    Edit post
                   </button>
-
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    onChange={handleImageChange}
-                  />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setConfirmOpen(true);
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                  >
+                    <Trash size="18" color="currentColor" />
+                    Delete post
+                  </button>
                 </div>
+              )}
+            </div>
+          )}
+        </header>
 
-                {/* =========================
-                    New Image Preview
-                ========================= */}
+        {/* =========================
+            Content
+        ========================= */}
+        <div className="px-4 pb-3 pt-3">
+          {isEditing ? (
+            <div className="flex flex-col gap-3">
+              <textarea
+                value={updatedBody}
+                onChange={(e) => setUpdatedBody(e.target.value)}
+                rows={3}
+                autoFocus
+                placeholder="What's on your mind?"
+                className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 outline-none transition-shadow focus:ring-2 focus:ring-indigo-500/50 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100"
+              />
 
-                {imagePreview && (
-                  <div className="w-full">
-                    <p className="mb-2 text-sm text-gray-500">New image:</p>
+              {(imagePreview || image) && (
+                <img
+                  src={imagePreview || image}
+                  alt="Post"
+                  className="max-h-96 w-full rounded-xl object-cover"
+                />
+              )}
 
-                    <img
-                      src={imagePreview}
-                      alt="New post preview"
-                      className="w-full max-h-96 object-cover rounded-lg"
-                    />
-                  </div>
-                )}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleImageChange}
+              />
 
-                {/* =========================
-                    Current Image
-                ========================= */}
-
-                {!imagePreview && image && (
-                  <div className="w-full">
-                    <p className="mb-2 text-sm text-gray-500">Current image:</p>
-
-                    <img
-                      src={image}
-                      alt={name}
-                      className="w-full max-h-96 object-cover rounded-lg"
-                    />
-                  </div>
-                )}
-
-                {/* =========================
-                    Buttons
-                ========================= */}
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800"
+                >
+                  <Gallery size="20" color="#FF8A65" />
+                  {image || imagePreview ? "Change photo" : "Add photo"}
+                </button>
 
                 <div className="flex gap-2">
                   <button
-                    onClick={handleUpdate}
-                    className="cursor-pointer group/button relative inline-flex items-center justify-center overflow-hidden rounded-md bg-blue-500/30 backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-xl hover:shadow-blue-600/50 border border-white/20"
+                    type="button"
+                    onClick={closeEdit}
+                    className="cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800"
                   >
-                    <span className="text-lg">Update</span>
-                    <div className="absolute inset-0 flex h-full w-full justify-center transform-[skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:transform-[skew(-13deg)_translateX(100%)]">
-                      <div className="relative h-full w-10 bg-white/30" />
-                    </div>
+                    Cancel
                   </button>
-
                   <button
                     type="button"
-                    onClick={handleCancel}
-                    className="relative border-2 cursor-pointer border-black group hover:border-green-500 w-12 h-12 duration-500 overflow-hidden"
+                    onClick={handleUpdate}
+                    disabled={isUpdating}
+                    className="cursor-pointer rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    <p className="font-Manrope text-3xl h-full w-full flex items-center justify-center text-black duration-500 relative z-10 group-hover:scale-0">
-                      ×
-                    </p>
-                    <span className="absolute w-full h-full bg-green-500 rotate-45 group-hover:top-9 duration-500 top-12 left-0" />
-                    <span className="absolute w-full h-full bg-green-500 rotate-45 top-0 group-hover:left-9 duration-500 left-12" />
-                    <span className="absolute w-full h-full bg-green-500 rotate-45 top-0 group-hover:right-9 duration-500 right-12" />
-                    <span className="absolute w-full h-full bg-green-500 rotate-45 group-hover:bottom-9 duration-500 bottom-12 right-0" />
+                    {isUpdating ? "Saving..." : "Save"}
                   </button>
                 </div>
               </div>
-            ) : (
-              /* =========================
-                  Post Body
-              ========================= */
-
-              <p className="italic text-zinc-900 dark:text-zinc-200 leading-loose wrap-break-word whitespace-normal overflow-wrap-break-word">
+            </div>
+          ) : (
+            body && (
+              <p className="whitespace-pre-wrap wrap-break-word text-[15px] leading-relaxed text-gray-800 dark:text-gray-200">
                 {body}
               </p>
-            )}
-          </div>
-        </Card.Header>
-        {isMyPost && (
-          <>
-            {/* From Uiverse.io by Shubh0408 */}
-            <button
-              onClick={handleDelete}
-              type="button"
-              className="group cursor-pointer relative flex h-14 w-14 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-red-800 bg-red-400 hover:bg-red-600"
-            >
-              <svg
-                viewBox="0 0 1.625 1.625"
-                className="absolute -top-7 fill-white delay-100 group-hover:top-6 group-hover:animate-[spin_1.4s] group-hover:duration-1000"
-                height={15}
-                width={15}
-              >
-                <path d="M.471 1.024v-.52a.1.1 0 0 0-.098.098v.618c0 .054.044.098.098.098h.487a.1.1 0 0 0 .098-.099h-.39c-.107 0-.195 0-.195-.195" />
-                <path d="M1.219.601h-.163A.1.1 0 0 1 .959.504V.341A.033.033 0 0 0 .926.309h-.26a.1.1 0 0 0-.098.098v.618c0 .054.044.098.098.098h.487a.1.1 0 0 0 .098-.099v-.39a.033.033 0 0 0-.032-.033" />
-                <path d="m1.245.465-.15-.15a.02.02 0 0 0-.016-.006.023.023 0 0 0-.023.022v.108c0 .036.029.065.065.065h.107a.023.023 0 0 0 .023-.023.02.02 0 0 0-.007-.016" />
-              </svg>
-              <svg
-                width={16}
-                fill="none"
-                viewBox="0 0 39 7"
-                className="origin-right duration-500 group-hover:rotate-90"
-              >
-                <line strokeWidth={4} stroke="white" y2={5} x2={39} y1={5} />
-                <line
-                  strokeWidth={3}
-                  stroke="white"
-                  y2="1.5"
-                  x2="26.0357"
-                  y1="1.5"
-                  x1={12}
-                />
-              </svg>
-              <svg width={16} fill="none" viewBox="0 0 33 39">
-                <mask fill="white" id="path-1-inside-1_8_19">
-                  <path d="M0 0H33V35C33 37.2091 31.2091 39 29 39H4C1.79086 39 0 37.2091 0 35V0Z" />
-                </mask>
-                <path
-                  mask="url(#path-1-inside-1_8_19)"
-                  fill="white"
-                  d="M0 0H33H0ZM37 35C37 39.4183 33.4183 43 29 43H4C-0.418278 43 -4 39.4183 -4 35H4H29H37ZM4 43C-0.418278 43 -4 39.4183 -4 35V0H4V35V43ZM37 0V35C37 39.4183 33.4183 43 29 43V35V0H37Z"
-                />
-                <path strokeWidth={4} stroke="white" d="M12 6L12 29" />
-                <path strokeWidth={4} stroke="white" d="M21 6V29" />
-              </svg>
-            </button>
-          </>
+            )
+          )}
+        </div>
+
+        {/* الصورة بعرض الكارت كله زي فيسبوك */}
+        {!isEditing && image && (
+          <img
+            src={image}
+            alt={`${name}'s post`}
+            loading="lazy"
+            decoding="async"
+            className="max-h-150 w-full bg-gray-100 object-cover dark:bg-slate-800"
+          />
         )}
+
         {/* =========================
-            Footer
+            Counts
         ========================= */}
-        <Card.Footer className="py3 mt-3 border-t border-violet-500">
-          <div className="flex justify-between w-full my-3">
-            <div className="flex gap-2.5">
-              {/* زر اللايك */}
-              {/* زر اللايك */}
-              <button
-                type="button"
-                onClick={() => handleLike()}
-                className="cursor-pointer hover:scale-110 transition-transform flex items-center gap-1.5"
-              >
-                <Like1
-                  size={32}
-                  color={isLikedByMe ? "#2dc442" : "#64748b"}
-                  variant={isLikedByMe ? "Bold" : "Outline"} // 👈 هنا السر: Bold يجعلها Filled
-                />
-
-                {/* عرض عدد اللايكات بجانب الأيقونة */}
-                <span
-                  className={
-                    isLikedByMe ? "text-[#2dc442] font-bold" : "text-slate-500"
-                  }
-                >
-                  {post.likes?.length || 0}
-                </span>
-              </button>
-              <Share size={40} color="#092" />
-            </div>
-
-            <div className="flex items-center gap-3 text-amber-400">
-              {!PostDetails && (
-                <Link
-                  className="flex gap-3 items-center"
-                  to={`/PostDetails/${_id}`}
-                >
-                  <span className="text-blue-800">{commentsCount}</span>
-                  <MessageText size={40} color="#2dc442" />
-                  show all coment
-                </Link>
-              )}
-            </div>
+        {(likesCount > 0 || commentsCount > 0) && (
+          <div className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400">
+            <span>
+              {likesCount > 0 &&
+                `${likesCount} ${likesCount === 1 ? "like" : "likes"}`}
+            </span>
+            <span>
+              {commentsCount > 0 &&
+                `${commentsCount} ${commentsCount === 1 ? "comment" : "comments"}`}
+            </span>
           </div>
-        </Card.Footer>
+        )}
+
         {/* =========================
-            Top Comment
+            Action bar: Like / Comment / Share
+        ========================= */}
+        <div className="mx-4 flex items-center border-t border-gray-200 py-1 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={() => handleLike()}
+            className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-slate-800 ${
+              isLikedByMe
+                ? "text-[#2dc442]"
+                : "text-gray-600 dark:text-gray-300"
+            }`}
+          >
+            <Like1
+              size="22"
+              color="currentColor"
+              variant={isLikedByMe ? "Bold" : "Outline"}
+            />
+            Like
+          </button>
+
+          {PostDetails ? (
+            <div className="flex flex-1 items-center justify-center gap-2 py-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+              <MessageText size="22" color="currentColor" />
+              Comment
+            </div>
+          ) : (
+            <Link
+              to={`/PostDetails/${_id}`}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
+            >
+              <MessageText size="22" color="currentColor" />
+              Comment
+            </Link>
+          )}
+
+          <button
+            type="button"
+            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
+          >
+            <Share size="22" color="currentColor" />
+            Share
+          </button>
+        </div>
+
+        {/* =========================
+            Top comment
         ========================= */}
         {topComment && !PostDetails && (
-          <Coment comment={topComment} postId={post._id} />
-        )}{" "}
-      </Card>
+          <div className="px-4 pb-4 pt-2">
+            <Coment comment={topComment} postId={_id} />
+            <Link
+              to={`/PostDetails/${_id}`}
+              className="mt-2 inline-block text-sm font-medium text-gray-500 hover:underline dark:text-gray-400"
+            >
+              View all comments
+            </Link>
+          </div>
+        )}
+      </article>
+
+      {/* =========================
+          Delete confirm modal
+      ========================= */}
+      {confirmOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !isDeleting && setConfirmOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`delete-title-${_id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#18181B]"
+          >
+            <h3
+              id={`delete-title-${_id}`}
+              className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+            >
+              Delete this post?
+            </h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              This can't be undone. The post and its comments will be removed.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(false)}
+                disabled={isDeleting}
+                className="cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="cursor-pointer rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
