@@ -19,6 +19,13 @@ export function useComent(comment: TopComment2, postId: string) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
+  // حالات الردود والإعجاب الجديدة
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [repliesList, setRepliesList] = useState<any[]>([]);
+  const [isLikedByMe, setIsLikedByMe] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+
   const menuRef = useRef<HTMLDivElement>(null);
 
   const userId = userData?._id || userData?.id;
@@ -87,6 +94,29 @@ export function useComent(comment: TopComment2, postId: string) {
     updateCommentMutation(formData);
   }
 
+  // دوال الإعجاب والردود المؤقتة للواجهة
+  function handleLikeComment() {
+    setIsLikedByMe((prev) => !prev);
+    setLikesCount((prev) => (isLikedByMe ? prev - 1 : prev + 1));
+  }
+
+  function handleSendReply() {
+    if (!replyText.trim()) return;
+
+    const newReply = {
+      content: replyText,
+      user: {
+        name: userData?.name || "You",
+        photo: userData?.photo || "",
+      },
+    };
+
+    setRepliesList((prev) => [...prev, newReply]);
+    setReplyText("");
+    setShowReplyInput(false);
+    toast.success("Reply added!");
+  }
+
   const formattedDate = new Date(comment.createdAt).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
@@ -109,5 +139,14 @@ export function useComent(comment: TopComment2, postId: string) {
     reset,
     onSubmit,
     formattedDate,
+    showReplyInput,
+    setShowReplyInput,
+    replyText,
+    setReplyText,
+    handleLikeComment,
+    handleSendReply,
+    isLikedByMe,
+    likesCount,
+    repliesList,
   };
 }
