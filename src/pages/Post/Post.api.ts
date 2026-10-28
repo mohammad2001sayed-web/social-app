@@ -1,13 +1,12 @@
 import axios from "axios";
 import type { Post } from "./Post.interface";
-import toast from "react-hot-toast";
 
 export async function HandleAllPost(): Promise<Post[]> {
   const token = localStorage.getItem("tkn");
 
   try {
     const res = await axios.get(
-      `https://route-posts.routemisr.com/posts?limit=50`,
+      `${import.meta.env.VITE_BASE_URL}/posts?limit=50`,
       {
         headers: {
           token: token || "",
