@@ -191,12 +191,6 @@ export default function PostCard({
       .finally(() => setConfirmOpen(false));
   }
 
-  const formattedDate = new Date(createdAt).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-
   const likesCount = post.likes?.length || 0;
 
   // البوست الأصلي لو ده بوست متشير (اسم الحقل بيختلف حسب الـ API)
@@ -227,10 +221,10 @@ export default function PostCard({
                 {name}
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-  {timeAgo(createdAt)}
-  {/* لو عندك متغير بيحدد هل البوست ده مشارك ولا لأ، سيبه */}
-  {/* {isShared && " · shared a post"} */}
-</p>
+                {timeAgo(createdAt)}
+                {/* لو عندك متغير بيحدد هل البوست ده مشارك ولا لأ، سيبه */}
+                {/* {isShared && " · shared a post"} */}
+              </p>
             </div>
           </Link>
 
