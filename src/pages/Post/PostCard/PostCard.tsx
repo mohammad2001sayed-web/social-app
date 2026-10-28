@@ -1,4 +1,4 @@
-import { Avatar } from "@heroui/react";
+import { Avatar, useOverlayState } from "@heroui/react";
 import type { Post } from "../Post.interface";
 import {
   Like1,
@@ -17,6 +17,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { FnUpdatePost, FnDeletePost } from "../CreatPost.abi";
 import { toggleLikePost } from "../Post.api";
+import SharePostModal from "./SharePostModal/SharePostModal";
+import { timeAgo } from "./timenow";
 
 export default function PostCard({
   post,
@@ -27,6 +29,7 @@ export default function PostCard({
 }) {
   const { userData } = useContext(AuthContext);
   const queryClient = useQueryClient();
+  const shareModal = useOverlayState();
 
   const {
     _id,
@@ -196,6 +199,11 @@ export default function PostCard({
 
   const likesCount = post.likes?.length || 0;
 
+  // البوست الأصلي لو ده بوست متشير (اسم الحقل بيختلف حسب الـ API)
+  const sharedPost: any =
+    (post as any).sharedPost ?? (post as any).originalPost ?? null;
+  const isShared = !!sharedPost || !!(post as any).isShare;
+
   return (
     <div className="container mx-auto px-4">
       <article className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#18181B]">
@@ -219,8 +227,10 @@ export default function PostCard({
                 {name}
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {formattedDate}
-              </p>
+  {timeAgo(createdAt)}
+  {/* لو عندك متغير بيحدد هل البوست ده مشارك ولا لأ، سيبه */}
+  {/* {isShared && " · shared a post"} */}
+</p>
             </div>
           </Link>
 
@@ -338,6 +348,66 @@ export default function PostCard({
           )}
         </div>
 
+        {/* =========================
+            البوست الأصلي (لو ده شير)
+        ========================= */}
+        {isShared && !isEditing && (
+          <div className="mx-4 mb-3 overflow-hidden rounded-xl border border-gray-200 dark:border-slate-700">
+            {sharedPost ? (
+              <Link to={`/PostDetails/${sharedPost._id}`} className="block">
+                <div className="flex items-center gap-3 px-3 pt-3">
+                  <Avatar size="sm">
+                    <Avatar.Image
+                      alt={sharedPost.user?.name}
+                      src={sharedPost.user?.photo}
+                    />
+                    <Avatar.Fallback>
+                      {(sharedPost.user?.name || "U")
+                        .substring(0, 2)
+                        .toUpperCase()}
+                    </Avatar.Fallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {sharedPost.user?.name || "User"}
+                    </p>
+                    {sharedPost.createdAt && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(sharedPost.createdAt).toLocaleDateString(
+                          "en-GB",
+                          { day: "numeric", month: "short", year: "numeric" },
+                        )}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {sharedPost.body && (
+                  <p className="whitespace-pre-wrap wrap-break-word px-3 pt-2 text-[15px] leading-relaxed text-gray-800 dark:text-gray-100">
+                    {sharedPost.body}
+                  </p>
+                )}
+
+                {sharedPost.image ? (
+                  <img
+                    src={sharedPost.image}
+                    alt="Shared post"
+                    loading="lazy"
+                    decoding="async"
+                    className="mt-2 max-h-96 w-full bg-gray-100 object-cover dark:bg-slate-800"
+                  />
+                ) : (
+                  <div className="h-3" />
+                )}
+              </Link>
+            ) : (
+              <p className="p-4 text-sm text-gray-500 dark:text-gray-400">
+                This post is no longer available.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* الصورة بعرض الكارت كله زي فيسبوك */}
         {!isEditing && image && (
           <img
@@ -403,6 +473,7 @@ export default function PostCard({
 
           <button
             type="button"
+            onClick={shareModal.open}
             className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
           >
             <Share size="22" color="currentColor" />
@@ -425,6 +496,15 @@ export default function PostCard({
           </div>
         )}
       </article>
+
+      {/* =========================
+          Share modal
+      ========================= */}
+      <SharePostModal
+        post={post}
+        isOpen={shareModal.isOpen}
+        onOpenChange={shareModal.setOpen}
+      />
 
       {/* =========================
           Delete confirm modal

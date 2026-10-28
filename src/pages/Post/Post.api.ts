@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { Post } from "./Post.interface";
+import toast from "react-hot-toast";
 
 export async function HandleAllPost(): Promise<Post[]> {
   const token = localStorage.getItem("tkn");
@@ -39,6 +40,24 @@ export async function toggleLikePost(postId: string) {
       headers: {
         token: token || "",
       },
+    }
+  );
+}
+
+
+// دالة مشاركة البوست
+export const getBaseUrl = () =>
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_BASE_URL 
+
+const getToken = () => localStorage.getItem("tkn") || "";
+
+export async function sharePostApi({ postId, body }: { postId: string; body: { body: string } }) {
+  return await axios.post(
+    `${getBaseUrl()}/posts/${postId}/share`,
+    body,
+    {
+      headers: { token: getToken() },
     }
   );
 }

@@ -10,12 +10,14 @@ import PostDetails from "../../pages/PostDetails/PostDetails";
 import Profile from "../../components/Profile/Profile";
 import EditProfile from "../../components/Profile/EditProfile/EditProfile";
 import UserPosts from "../../pages/UserPosts/UserPosts";
+import Notifications from "../../pages/Notifications/Notifications";
 
 export const router = createBrowserRouter([
   {path: "/", element: <Layout />, children: [
     {index: true, element: <Navigate to="/post" replace /> },
     {path: "post", element: <ProtectedRoute><Post /></ProtectedRoute>},
     {path: "user-posts/:id", element: <ProtectedRoute><UserPosts /></ProtectedRoute>},
+    {path: "notifications", element: <ProtectedRoute><Notifications /></ProtectedRoute>},
     {path: "Profile", element: <ProtectedRoute><Profile /></ProtectedRoute>},
     {path: "Profile/Edit", element: (<ProtectedRoute><EditProfile /></ProtectedRoute>),},
     {path: "PostDetails/:id", element: <ProtectedRoute><PostDetails /></ProtectedRoute>},

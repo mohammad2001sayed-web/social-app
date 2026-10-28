@@ -48,6 +48,7 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
   const links = [
     { name: "Posts", href: "/post" },
     { name: "Profile", href: "/profile" },
+    { name: "notifications", href: "/notifications" },
   ];
 
   const router = useNavigate();

@@ -4,6 +4,7 @@ import { useContext, useState } from "react";
 import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
 import { useComent } from "./useComent";
 import type { TopComment2 } from "../../pages/Post/Post.interface";
+import { timeAgo } from "../../pages/Post/PostCard/timenow";
 
 /* =========================================================
    Avatar بمقاس ثابت: مش معتمد على HeroUI عشان الخط يفضل مظبوط
@@ -114,7 +115,8 @@ export default function Coment({
   } = useComent(comment, postId);
 
   const showToggle = !showReplies && repliesCount > 0;
-  const showLoading = showReplies && isLoadingReplies && repliesList.length === 0;
+  const showLoading =
+    showReplies && isLoadingReplies && repliesList.length === 0;
   const hasChildren = showToggle || showReplies || showReplyInput;
 
   // عدد الصفوف في الشجرة عشان نعرف مين آخر واحد
@@ -165,7 +167,6 @@ export default function Coment({
                         {content}
                       </p>
                     )}
-
                   </div>
                 )}
 
@@ -294,9 +295,7 @@ export default function Coment({
 
           {/* Like · Reply · التاريخ */}
           {!isEditing && (
-            <div
-              className="ms-3 mt-1 flex items-center gap-3 pb-1 text-xs"
-            >
+            <div className="ms-3 mt-1 flex items-center gap-3 pb-1 text-xs">
               <button
                 type="button"
                 onClick={() => handleLikeComment()}
@@ -315,9 +314,11 @@ export default function Coment({
               >
                 Reply
               </button>
-              <span className="text-gray-400 dark:text-gray-400">
-                {formattedDate}
-              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {timeAgo(comment.createdAt)}
+                {/* لو عندك متغير بيحدد هل البوست ده مشارك ولا لأ، سيبه */}
+                {/* {isShared && " · shared a post"} */}
+              </p>
 
               {likesCount > 0 && (
                 <span className="ml-auto flex items-center gap-1 font-medium text-gray-600 dark:text-gray-300">
@@ -357,15 +358,16 @@ export default function Coment({
           )}
 
           {/* الردود */}
+         {/* الردود */}
           {showReplies &&
             repliesList.map((reply: any, idx: number) => {
               const author = reply.commentCreator ?? reply.user ?? {};
-              const replyDate = reply.createdAt
-                ? new Date(reply.createdAt).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                  })
-                : "";
+              
+              {/* حساب وقت الرد بالساعات والدقائق زي الكومنتات */}
+              const replyTimeAgo = reply.createdAt ? timeAgo(reply.createdAt) : "";
+              
+              {/* عدد لايكات الرد (لو الـ API بيرجعها) */}
+              const replyLikesCount = reply.likes?.length || reply.likesCount || 0;
 
               return (
                 <ThreadRow key={reply._id || idx} isLast={nextIsLast()}>
@@ -378,20 +380,27 @@ export default function Coment({
                       />
                     </Link>
 
-                    <div className="min-w-0">
-                      <div className="inline-block max-w-full rounded-2xl bg-gray-100 px-3 py-1.5 dark:bg-slate-700">
-                        <h5 className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">
+                    <div className="min-w-0 flex-1">
+                      <div className="inline-block max-w-full rounded-2xl bg-gray-100 px-3 py-1.5 dark:bg-slate-800">
+                        <h5 className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate">
                           {author.name || "User"}
                         </h5>
-                        <p className="whitespace-pre-wrap wrap-break-word text-sm leading-snug text-gray-800 dark:text-gray-100">
+                        <p className="whitespace-pre-wrap wrap-break-word text-sm leading-snug text-gray-800 dark:text-gray-200">
                           {reply.content}
                         </p>
                       </div>
-                      {replyDate && (
-                        <div className="ms-3 mt-0.5 text-xs text-gray-400 dark:text-gray-400">
-                          {replyDate}
-                        </div>
-                      )}
+
+                      {/* التاريخ (timeAgo) + عدد اللايكات للرد */}
+                      <div className="ms-3 mt-0.5 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+                        {replyTimeAgo && <span>{replyTimeAgo}</span>}
+
+                        {replyLikesCount > 0 && (
+                          <span className="flex items-center gap-1 font-medium text-gray-600 dark:text-gray-300">
+                            <Like1 size="12" variant="Bold" color="#2dc442" />
+                            {replyLikesCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </ThreadRow>
