@@ -96,7 +96,7 @@ export default function CreatePost({ user }: { user: User }) {
   }
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="w-full">
       <div className="w-full bg-[#000d0d]/20 p-3 rounded-lg">
         <div className="flex items-center gap-3 mb-3 pb-3 border-b-2 border-blue-900">
           <h2 className="text-amber-700 font-medium">
@@ -104,15 +104,15 @@ export default function CreatePost({ user }: { user: User }) {
           </h2>
         </div>
         <Form onSubmit={handleSubmit(CreateUserPost)}>
-          <div className="flex flex-col md:flex-row items-center gap-3 mb-3">
+          <div className="flex flex-row items-center gap-3 mb-3">
             <Avatar>
               <Avatar.Image alt={name} src={photo} />
-              <Avatar.Fallback>JD</Avatar.Fallback>
+            <Avatar.Fallback>{name.charAt(0).toUpperCase()}</Avatar.Fallback>
             </Avatar>
 
             <Input
               {...register("body")}
-              className="md:grow"
+              className="grow"
               type="text"
               placeholder="Create your post..."
             />
