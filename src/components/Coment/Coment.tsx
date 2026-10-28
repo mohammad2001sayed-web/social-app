@@ -39,7 +39,10 @@ export default function Coment({
   return (
     <div className="flex items-start gap-3 w-full py-2 group">
       {/* User Avatar */}
-      <Link to={`/user-posts/${comment.commentCreator._id}`} className="shrink-0">
+      <Link
+        to={`/user-posts/${comment.commentCreator._id}`}
+        className="shrink-0"
+      >
         <Avatar className="w-9 h-9">
           <Avatar.Image alt={name} src={photo} />
           <Avatar.Fallback>{name?.charAt(0).toUpperCase()}</Avatar.Fallback>
@@ -51,7 +54,6 @@ export default function Coment({
         <div className="flex items-start justify-between gap-2">
           {/* Comment Bubble */}
           <div className="flex-1 bg-gray-100 dark:bg-slate-800/80 rounded-2xl px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 border border-gray-200/60 dark:border-slate-700/60 shadow-xs">
-            
             {/* Header inside bubble */}
             <div className="flex items-center justify-between gap-4 mb-1">
               <Link
@@ -69,7 +71,7 @@ export default function Coment({
             {!isEditing && (
               <div className="space-y-2">
                 {content && (
-                  <p className="max-w-70 wrap-break-word whitespace-normal text-sm leading-relaxed text-gray-800 dark:text-gray-200">
+                  <p className="w-full overflow-hidden text-ellipsis break-all whitespace-pre-wrap text-sm leading-relaxed text-gray-800 dark:text-gray-200">
                     {content}
                   </p>
                 )}
@@ -85,7 +87,10 @@ export default function Coment({
 
             {/* Edit Mode Form inside Bubble */}
             {isEditing && (
-              <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2.5 mt-2">
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex flex-col gap-2.5 mt-2"
+              >
                 <textarea
                   {...register("content")}
                   placeholder="Edit your comment..."
