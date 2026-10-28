@@ -1,8 +1,14 @@
 import { useState, useEffect, useRef, useContext } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { deleteCommentApi, updateCommentApi } from "./coment.api";
+import {
+  deleteCommentApi,
+  updateCommentApi,
+  toggleCommentLikeApi,
+  addCommentReplyApi,
+  getCommentRepliesApi,
+} from "./coment.api";
 import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
 import type { TopComment2 } from "../../pages/Post/Post.interface";
 
@@ -19,19 +25,21 @@ export function useComent(comment: TopComment2, postId: string) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
-  // حالات الردود والإعجاب الجديدة
   const [showReplyInput, setShowReplyInput] = useState(false);
+  const [showReplies, setShowReplies] = useState(false);
   const [replyText, setReplyText] = useState("");
-  const [repliesList, setRepliesList] = useState<any[]>([]);
-  const [isLikedByMe, setIsLikedByMe] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
 
   const menuRef = useRef<HTMLDivElement>(null);
 
   const userId = userData?._id || userData?.id;
   const isMyComment = comment.commentCreator._id === userId;
 
-  // إغلاق المنيو عند الضغط خارجها
+  const isLikedByMe = comment.likes?.some(
+    (item: any) =>
+      (typeof item === "string" ? item : item?._id || item?.id) === userId,
+  );
+  const likesCount = comment.likes?.length || 0;
+
   useEffect(() => {
     if (!menuOpen) return;
     function onClickOutside(e: MouseEvent) {
@@ -39,43 +47,105 @@ export function useComent(comment: TopComment2, postId: string) {
         setMenuOpen(false);
       }
     }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
     document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [menuOpen]);
 
-  // Delete Mutation
+  // =========================
+  // Replies
+  // =========================
+  const embeddedReplies: any[] = (comment as any).replies || [];
+  const repliesCount: number =
+    (comment as any).repliesCount ?? embeddedReplies.length;
+
+  // لو الردود جاية جوه الكومنت نفسه منحتاجش نطلبها تاني
+  const { data: fetchedReplies = [], isLoading: isLoadingReplies } = useQuery({
+    queryKey: ["CommentReplies", comment._id],
+    queryFn: async () => {
+      const res = await getCommentRepliesApi({
+        postId,
+        commentId: comment._id,
+      });
+      const d = res.data;
+      // بنقبل أكتر من شكل للـ response
+      return (
+        d?.data?.replies ??
+        d?.replies ??
+        d?.data?.comments ??
+        d?.comments ??
+        []
+      ) as any[];
+    },
+    enabled: showReplies && embeddedReplies.length === 0,
+  });
+
+  const repliesList: any[] = showReplies
+    ? embeddedReplies.length > 0
+      ? embeddedReplies
+      : fetchedReplies
+    : [];
+
+  function invalidateAll() {
+    queryClient.invalidateQueries({ queryKey: ["PostComments", postId] });
+    queryClient.invalidateQueries({ queryKey: ["PostDetails", postId] });
+    queryClient.invalidateQueries({ queryKey: ["CommentReplies", comment._id] });
+  }
+
+  // =========================
+  // Mutations
+  // =========================
   const { mutate: deleteCommentMutation, isPending: isDeleting } = useMutation({
     mutationFn: () => deleteCommentApi({ postId, commentId: comment._id }),
     onSuccess: () => {
       toast.success("Comment deleted successfully");
       setConfirmDeleteOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["PostComments", postId] });
-      queryClient.invalidateQueries({ queryKey: ["PostDetails", postId] });
+      invalidateAll();
     },
-    onError: () => {
-      toast.error("Failed to delete comment");
-    },
+    onError: () => toast.error("Failed to delete comment"),
   });
 
-  // Update Mutation
   const { mutate: updateCommentMutation, isPending: isUpdating } = useMutation({
     mutationFn: (formData: FormData) =>
       updateCommentApi({ postId, commentId: comment._id, formData }),
     onSuccess: () => {
       toast.success("Comment updated successfully");
       setIsEditing(false);
-      queryClient.invalidateQueries({ queryKey: ["PostComments", postId] });
-      queryClient.invalidateQueries({ queryKey: ["PostDetails", postId] });
+      invalidateAll();
     },
-    onError: () => {
-      toast.error("Failed to update comment");
-    },
+    onError: () => toast.error("Failed to update comment"),
   });
 
-  const { register, handleSubmit, reset } = useForm<UpdateCommentForm>({
-    defaultValues: {
-      content: comment.content,
+  const { mutate: handleLikeComment } = useMutation({
+    mutationFn: () => toggleCommentLikeApi({ postId, commentId: comment._id }),
+    onSuccess: () => invalidateAll(),
+    onError: () => toast.error("Failed to like comment"),
+  });
+
+  const { mutate: sendReplyMutation, isPending: isSendingReply } = useMutation({
+    mutationFn: (content: string) =>
+      addCommentReplyApi({ postId, commentId: comment._id, content }),
+    onSuccess: () => {
+      toast.success("Reply added successfully!");
+      setReplyText("");
+      setShowReplyInput(false);
+      setShowReplies(true); // اعرض الردود بعد الإرسال
+      invalidateAll();
     },
+    onError: () => toast.error("Failed to add reply"),
+  });
+
+  // =========================
+  // Edit form
+  // =========================
+  const { register, handleSubmit, reset } = useForm<UpdateCommentForm>({
+    defaultValues: { content: comment.content },
   });
 
   function onSubmit(data: UpdateCommentForm) {
@@ -94,33 +164,15 @@ export function useComent(comment: TopComment2, postId: string) {
     updateCommentMutation(formData);
   }
 
-  // دوال الإعجاب والردود المؤقتة للواجهة
-  function handleLikeComment() {
-    setIsLikedByMe((prev) => !prev);
-    setLikesCount((prev) => (isLikedByMe ? prev - 1 : prev + 1));
-  }
-
   function handleSendReply() {
     if (!replyText.trim()) return;
-
-    const newReply = {
-      content: replyText,
-      user: {
-        name: userData?.name || "You",
-        photo: userData?.photo || "",
-      },
-    };
-
-    setRepliesList((prev) => [...prev, newReply]);
-    setReplyText("");
-    setShowReplyInput(false);
-    toast.success("Reply added!");
+    sendReplyMutation(replyText.trim());
   }
 
-  const formattedDate = new Date(comment.createdAt).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
+  const formattedDate = new Date(comment.createdAt).toLocaleDateString(
+    "en-GB",
+    { day: "numeric", month: "short" },
+  );
 
   return {
     isEditing,
@@ -141,6 +193,8 @@ export function useComent(comment: TopComment2, postId: string) {
     formattedDate,
     showReplyInput,
     setShowReplyInput,
+    showReplies,
+    setShowReplies,
     replyText,
     setReplyText,
     handleLikeComment,
@@ -148,5 +202,8 @@ export function useComent(comment: TopComment2, postId: string) {
     isLikedByMe,
     likesCount,
     repliesList,
+    repliesCount,
+    isLoadingReplies,
+    isSendingReply,
   };
 }

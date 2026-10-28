@@ -1,8 +1,69 @@
-import { Avatar } from "@heroui/react";
 import { Link } from "react-router";
-import { More, Edit2, Trash, Gallery, Like1, Send } from "iconsax-react";
+import { More, Edit2, Trash, Gallery, Like1, Send2 } from "iconsax-react";
+import { useContext, useState } from "react";
+import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
 import { useComent } from "./useComent";
 import type { TopComment2 } from "../../pages/Post/Post.interface";
+
+/* =========================================================
+   Avatar بمقاس ثابت: مش معتمد على HeroUI عشان الخط يفضل مظبوط
+========================================================= */
+function UserAvatar({
+  name,
+  src,
+  size,
+}: {
+  name?: string;
+  src?: string;
+  size: number;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div
+      style={{ width: size, height: size }}
+      className="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-300 text-[11px] font-semibold text-gray-700 dark:bg-slate-700 dark:text-gray-100"
+    >
+      {src && !failed ? (
+        <img
+          src={src}
+          alt={name || "user"}
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        (name || "U").charAt(0).toUpperCase()
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+   صف في شجرة الردود
+   gutter عرضه 40px: الخط العمودي عند x=15 (نفس مركز أفاتار التعليق 32px)
+   والمنحنى بيوصل لحد x=40 (بداية أفاتار الرد)
+   الخط بينزل لتحت إلا لو ده آخر صف
+========================================================= */
+function ThreadRow({
+  isLast,
+  children,
+}: {
+  isLast: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex">
+      <div className="relative w-10 shrink-0" aria-hidden>
+        <span className="absolute left-3.75 top-0 h-5 w-6.25 rounded-bl-xl border-b-2 border-l-2 border-gray-300 dark:border-slate-700" />
+        {!isLast && (
+          <span className="absolute bottom-0 left-3.75 top-5 w-0.5 bg-gray-300 dark:bg-slate-700" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1 pt-2">{children}</div>
+    </div>
+  );
+}
 
 export default function Coment({
   comment,
@@ -11,6 +72,8 @@ export default function Coment({
   comment: TopComment2;
   postId: string;
 }) {
+  const { userData } = useContext(AuthContext);
+
   const {
     commentCreator: { name, photo },
     content,
@@ -36,6 +99,8 @@ export default function Coment({
     formattedDate,
     showReplyInput,
     setShowReplyInput,
+    showReplies,
+    setShowReplies,
     replyText,
     setReplyText,
     handleLikeComment,
@@ -43,235 +108,365 @@ export default function Coment({
     isLikedByMe,
     likesCount,
     repliesList,
+    repliesCount,
+    isLoadingReplies,
+    isSendingReply,
   } = useComent(comment, postId);
 
+  const showToggle = !showReplies && repliesCount > 0;
+  const showLoading = showReplies && isLoadingReplies && repliesList.length === 0;
+  const hasChildren = showToggle || showReplies || showReplyInput;
+
+  // عدد الصفوف في الشجرة عشان نعرف مين آخر واحد
+  const rowsCount =
+    (showToggle ? 1 : 0) +
+    (showLoading ? 1 : 0) +
+    (showReplies ? repliesList.length : 0) +
+    (showReplyInput ? 1 : 0);
+
+  let rowIndex = 0;
+  const nextIsLast = () => ++rowIndex === rowsCount;
+
+  function cancelEdit() {
+    setIsEditing(false);
+    reset({ content: comment.content });
+  }
+
   return (
-    <div className="flex flex-col gap-2 w-full py-2 group">
-      <div className="flex items-start gap-3 w-full">
-        {/* User Avatar */}
-        <Link to={`/user-posts/${comment.commentCreator._id}`} className="shrink-0">
-          <Avatar className="w-9 h-9">
-            <Avatar.Image alt={name} src={photo} />
-            <Avatar.Fallback>{name?.charAt(0).toUpperCase()}</Avatar.Fallback>
-          </Avatar>
-        </Link>
+    <div className="w-full py-1.5">
+      {/* =========================
+          التعليق الأصلي
+      ========================= */}
+      <div className="flex gap-2">
+        {/* أفاتار + الخط النازل */}
+        <div className="flex w-8 shrink-0 flex-col items-center">
+          <Link to={`/user-posts/${comment.commentCreator._id}`}>
+            <UserAvatar name={name} src={photo} size={32} />
+          </Link>
+          {hasChildren && (
+            <div className="mt-1 w-0.5 flex-1 rounded bg-gray-300 dark:bg-slate-700" />
+          )}
+        </div>
 
-        {/* Comment Content & Options wrapper */}
-        <div className="flex-1 min-w-0 relative">
-          <div className="flex items-start justify-between gap-2">
-            {/* Comment Bubble */}
-            <div className="flex-1 bg-gray-100 dark:bg-slate-800/80 rounded-2xl px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 border border-gray-200/60 dark:border-slate-700/60 shadow-xs">
-              
-              {/* Header inside bubble */}
-              <div className="flex items-center justify-between gap-4 mb-1">
-                <Link
-                  to={`/user-posts/${comment.commentCreator._id}`}
-                  className="font-semibold text-xs text-gray-900 dark:text-gray-100 hover:underline truncate"
-                >
-                  {name}
-                </Link>
-                <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                  {formattedDate}
-                </span>
-              </div>
+        <div className="min-w-0 flex-1">
+          {!isEditing ? (
+            <div className="group/bubble flex items-center gap-1">
+              <div className="flex min-w-0 max-w-full flex-col items-start">
+                {(content || !image) && (
+                  <div className="max-w-full rounded-2xl bg-gray-100 px-3 py-2 dark:bg-slate-700">
+                    <Link
+                      to={`/user-posts/${comment.commentCreator._id}`}
+                      className="block text-[13px] font-semibold text-gray-900 hover:underline dark:text-gray-100"
+                    >
+                      {name}
+                    </Link>
+                    {content && (
+                      <p className="whitespace-pre-wrap wrap-break-word text-[15px] leading-snug text-gray-800 dark:text-gray-100">
+                        {content}
+                      </p>
+                    )}
 
-              {/* Normal Text & Image */}
-              {!isEditing && (
-                <div className="space-y-2">
-                  {content && (
-                    <p className="w-full overflow-hidden text-ellipsis break-all whitespace-pre-wrap text-sm leading-relaxed text-gray-800 dark:text-gray-200">
-                      {content}
-                    </p>
-                  )}
-                  {image && (
+                  </div>
+                )}
+
+                {image && (
+                  <div className={content ? "mt-1" : ""}>
                     <img
-                      className="max-h-48 w-full rounded-xl object-cover border border-gray-200 dark:border-slate-700 mt-2"
                       src={image}
-                      alt={name}
+                      alt={`${name}'s comment`}
+                      loading="lazy"
+                      decoding="async"
+                      className="max-h-64 max-w-full rounded-2xl border border-gray-200 object-cover dark:border-slate-700"
                     />
-                  )}
-                </div>
-              )}
-
-              {/* Edit Mode Form inside Bubble */}
-              {isEditing && (
-                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2.5 mt-2">
-                  <textarea
-                    {...register("content")}
-                    placeholder="Edit your comment..."
-                    rows={2}
-                    className="w-full resize-none rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-indigo-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-100"
-                  />
-
-                  <div className="flex items-center gap-2">
-                    <label
-                      htmlFor={`comment-image-${comment._id}`}
-                      className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-gray-200 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-300 transition-colors"
-                    >
-                      <Gallery size="16" color="currentColor" />
-                      Change photo
-                    </label>
-                    <input
-                      id={`comment-image-${comment._id}`}
-                      type="file"
-                      accept="image/*"
-                      {...register("image")}
-                      className="hidden"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-1">
-                    <button
-                      type="button"
-                      disabled={isUpdating}
-                      onClick={() => {
-                        setIsEditing(false);
-                        reset({ content: comment.content });
-                      }}
-                      className="cursor-pointer rounded-lg px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-slate-700"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isUpdating}
-                      className="cursor-pointer rounded-lg bg-indigo-600 px-3.5 py-1 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                    >
-                      {isUpdating ? "Saving..." : "Save"}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-
-            {/* 3 Dots Menu */}
-            {isMyComment && !isEditing && (
-              <div className="relative shrink-0" ref={menuRef}>
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen((v) => !v)}
-                  aria-label="Comment options"
-                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-slate-800"
-                >
-                  <More size="18" color="currentColor" />
-                </button>
-
-                {menuOpen && (
-                  <div
-                    role="menu"
-                    className="absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-xl dark:border-slate-700 dark:bg-[#0f1f38]"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        setIsEditing(true);
-                        reset({ content: comment.content });
-                      }}
-                      className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800"
-                    >
-                      <Edit2 size="16" color="currentColor" />
-                      Edit comment
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        setConfirmDeleteOpen(true);
-                      }}
-                      className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
-                    >
-                      <Trash size="16" color="currentColor" />
-                      Delete comment
-                    </button>
                   </div>
                 )}
               </div>
-            )}
-          </div>
 
-          {/* Footer Actions: Like & Reply */}
-          <div className="flex items-center gap-4 mt-1.5 ml-3 text-xs font-medium text-gray-500 dark:text-gray-400">
-            <button 
-              onClick={handleLikeComment}
-              className={`transition-colors cursor-pointer flex items-center gap-1 ${
-                isLikedByMe ? "text-[#2dc442]" : "hover:text-emerald-600 dark:hover:text-emerald-400"
-              }`}
-            >
-              <Like1 size="14" color="currentColor" variant={isLikedByMe ? "Bold" : "Linear"} />
-              <span>Like</span>
-              {likesCount > 0 && <span className="text-[10px]">({likesCount})</span>}
-            </button>
+              {isMyComment && (
+                <div className="relative shrink-0" ref={menuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setMenuOpen((v) => !v)}
+                    aria-label="Comment options"
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                    className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-all hover:bg-gray-100 focus-visible:opacity-100 dark:text-gray-300 dark:hover:bg-slate-800 md:group-hover/bubble:opacity-100 ${
+                      menuOpen ? "md:opacity-100" : "md:opacity-0"
+                    }`}
+                  >
+                    <More size="18" color="currentColor" />
+                  </button>
 
-            <button 
-              onClick={() => setShowReplyInput((prev) => !prev)}
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                  {menuOpen && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-xl dark:border-slate-700 dark:bg-[#0f1f38]"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setIsEditing(true);
+                          reset({ content: comment.content });
+                        }}
+                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-slate-800"
+                      >
+                        <Edit2 size="16" color="currentColor" />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setConfirmDeleteOpen(true);
+                        }}
+                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                      >
+                        <Trash size="16" color="currentColor" />
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex flex-col gap-1.5"
             >
-              Reply
-            </button>
-          </div>
+              <div className="flex items-end gap-1 rounded-3xl bg-gray-100 px-3 py-1.5 focus-within:ring-2 focus-within:ring-indigo-500/50 dark:bg-slate-700">
+                <textarea
+                  {...register("content")}
+                  rows={1}
+                  autoFocus
+                  placeholder="Edit your comment..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") cancelEdit();
+                  }}
+                  className="min-h-7 flex-1 resize-none bg-transparent py-1 text-[15px] text-gray-900 outline-none placeholder:text-gray-500 dark:text-gray-100"
+                />
+
+                <label
+                  htmlFor={`comment-image-${comment._id}`}
+                  aria-label="Change photo"
+                  className="mb-0.5 cursor-pointer rounded-full p-1 transition-colors hover:bg-gray-200 dark:hover:bg-slate-700"
+                >
+                  <Gallery size="20" color="#FF8A65" />
+                </label>
+                <input
+                  id={`comment-image-${comment._id}`}
+                  type="file"
+                  accept="image/*"
+                  {...register("image")}
+                  className="hidden"
+                />
+
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  aria-label="Save"
+                  className="mb-0.5 cursor-pointer rounded-full p-1 transition-colors hover:bg-indigo-500/10 disabled:opacity-40"
+                >
+                  <Send2
+                    size="20"
+                    variant="Bold"
+                    color="#6366f1"
+                    className={isUpdating ? "animate-pulse" : ""}
+                  />
+                </button>
+              </div>
+
+              <p className="ms-3 text-xs text-gray-500 dark:text-gray-300">
+                Press Esc to{" "}
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="cursor-pointer text-indigo-600 hover:underline dark:text-indigo-400"
+                >
+                  cancel
+                </button>
+              </p>
+            </form>
+          )}
+
+          {/* Like · Reply · التاريخ */}
+          {!isEditing && (
+            <div
+              className="ms-3 mt-1 flex items-center gap-3 pb-1 text-xs"
+            >
+              <button
+                type="button"
+                onClick={() => handleLikeComment()}
+                className={`cursor-pointer font-semibold hover:underline ${
+                  isLikedByMe
+                    ? "text-[#2dc442]"
+                    : "text-gray-500 dark:text-gray-300"
+                }`}
+              >
+                Like
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowReplyInput((prev) => !prev)}
+                className="cursor-pointer font-semibold text-gray-500 hover:underline dark:text-gray-300"
+              >
+                Reply
+              </button>
+              <span className="text-gray-400 dark:text-gray-400">
+                {formattedDate}
+              </span>
+
+              {likesCount > 0 && (
+                <span className="ml-auto flex items-center gap-1 font-medium text-gray-600 dark:text-gray-300">
+                  <Like1 size="14" variant="Bold" color="#2dc442" />
+                  {likesCount}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Reply Input Box */}
-      {showReplyInput && (
-        <div className="flex items-center gap-2 ml-12 mt-1">
-          <input 
-            type="text" 
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            placeholder="Write a reply..." 
-            className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full px-4 py-1.5 text-xs text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-indigo-500/50"
-          />
-          <button 
-            onClick={handleSendReply}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-1.5 rounded-full transition-colors cursor-pointer shrink-0 shadow-sm flex items-center gap-1"
-          >
-            <Send size="12" color="#fff" />
-            Reply
-          </button>
-        </div>
-      )}
+      {/* =========================
+          شجرة الردود
+      ========================= */}
+      {hasChildren && (
+        <div className="flex flex-col">
+          {/* زرار "View N replies" */}
+          {showToggle && (
+            <ThreadRow isLast={nextIsLast()}>
+              <button
+                type="button"
+                onClick={() => setShowReplies(true)}
+                className="flex h-6 cursor-pointer items-center text-sm font-semibold text-gray-600 hover:underline dark:text-gray-300"
+              >
+                View {repliesCount} {repliesCount === 1 ? "reply" : "replies"}
+              </button>
+            </ThreadRow>
+          )}
 
-      {/* Nested Replies List */}
-      {repliesList && repliesList.length > 0 && (
-        <div className="ml-10 pl-4 border-l-2 border-gray-200 dark:border-slate-800 space-y-2 mt-1">
-          {repliesList.map((reply: any, idx: number) => (
-            <div key={idx} className="flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 dark:bg-slate-800 shrink-0">
-                <img src={reply.user?.photo || photo} alt="reply avatar" className="w-full h-full object-cover" />
+          {showLoading && (
+            <ThreadRow isLast={nextIsLast()}>
+              <div className="flex h-6 items-center text-sm text-gray-500 dark:text-gray-300">
+                Loading replies...
               </div>
-              <div className="flex-1">
-                <div className="bg-gray-50 dark:bg-slate-900/60 rounded-2xl px-3.5 py-2 inline-block max-w-full border border-gray-100 dark:border-slate-800">
-                  <h5 className="font-semibold text-xs text-gray-900 dark:text-gray-100">
-                    {reply.user?.name || "User"}
-                  </h5>
-                  <p className="w-full overflow-hidden text-ellipsis break-all whitespace-pre-wrap text-xs text-gray-700 dark:text-gray-300 mt-0.5">
-                    {reply.content}
-                  </p>
+            </ThreadRow>
+          )}
+
+          {/* الردود */}
+          {showReplies &&
+            repliesList.map((reply: any, idx: number) => {
+              const author = reply.commentCreator ?? reply.user ?? {};
+              const replyDate = reply.createdAt
+                ? new Date(reply.createdAt).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                  })
+                : "";
+
+              return (
+                <ThreadRow key={reply._id || idx} isLast={nextIsLast()}>
+                  <div className="flex items-start gap-2">
+                    <Link to={author._id ? `/user-posts/${author._id}` : "#"}>
+                      <UserAvatar
+                        name={author.name}
+                        src={author.photo}
+                        size={24}
+                      />
+                    </Link>
+
+                    <div className="min-w-0">
+                      <div className="inline-block max-w-full rounded-2xl bg-gray-100 px-3 py-1.5 dark:bg-slate-700">
+                        <h5 className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">
+                          {author.name || "User"}
+                        </h5>
+                        <p className="whitespace-pre-wrap wrap-break-word text-sm leading-snug text-gray-800 dark:text-gray-100">
+                          {reply.content}
+                        </p>
+                      </div>
+                      {replyDate && (
+                        <div className="ms-3 mt-0.5 text-xs text-gray-400 dark:text-gray-400">
+                          {replyDate}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </ThreadRow>
+              );
+            })}
+
+          {/* صندوق كتابة رد */}
+          {showReplyInput && (
+            <ThreadRow isLast={nextIsLast()}>
+              <div className="flex items-start gap-2">
+                <UserAvatar
+                  name={userData?.name}
+                  src={userData?.photo}
+                  size={24}
+                />
+
+                <div className="flex min-w-0 flex-1 items-center gap-1 rounded-3xl bg-gray-100 px-3 py-1 focus-within:ring-2 focus-within:ring-indigo-500/50 dark:bg-slate-700">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (
+                        e.key === "Enter" &&
+                        replyText.trim() &&
+                        !isSendingReply
+                      ) {
+                        e.preventDefault();
+                        handleSendReply();
+                      }
+                      if (e.key === "Escape") setShowReplyInput(false);
+                    }}
+                    placeholder={`Reply to ${name}...`}
+                    className="min-w-0 flex-1 bg-transparent py-1 text-sm text-gray-900 outline-none placeholder:text-gray-500 dark:text-gray-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendReply}
+                    disabled={isSendingReply || !replyText.trim()}
+                    aria-label="Send reply"
+                    className="cursor-pointer rounded-full p-1 transition-colors enabled:hover:bg-indigo-500/10 disabled:opacity-30"
+                  >
+                    <Send2
+                      size="18"
+                      variant="Bold"
+                      color={replyText.trim() ? "#6366f1" : "#9ca3af"}
+                      className={isSendingReply ? "animate-pulse" : ""}
+                    />
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            </ThreadRow>
+          )}
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* =========================
+          تأكيد الحذف
+      ========================= */}
       {confirmDeleteOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={() => !isDeleting && setConfirmDeleteOpen(false)}
         >
           <div
             role="dialog"
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#18181B] border border-gray-100 dark:border-slate-800"
+            className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-[#18181B]"
           >
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Delete this comment?
             </h3>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
               This can't be undone. The comment will be permanently removed.
             </p>
 
@@ -280,7 +475,7 @@ export default function Coment({
                 type="button"
                 onClick={() => setConfirmDeleteOpen(false)}
                 disabled={isDeleting}
-                className="cursor-pointer rounded-xl px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800"
+                className="cursor-pointer rounded-xl px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-slate-800"
               >
                 Cancel
               </button>
