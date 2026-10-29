@@ -109,7 +109,7 @@ function Logo({ size = 36 }: { size?: number }) {
 
   return (
     <nav
-      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 rounded-2xl border border-slate-200 bg-white/90 text-slate-800 shadow-xl backdrop-blur-xl transition-colors duration-300 md:inset-x-0 md:bottom-auto md:top-0 md:rounded-none md:border-x-0 md:border-t-0 dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-100"
+      className="fixed inset-x-3 bottom-0 z-20 rounded-2xl border border-slate-200 bg-white/90 text-slate-800 shadow-xl backdrop-blur-xl transition-colors duration-300 md:inset-x-0 md:bottom-auto md:top-0 md:rounded-none md:border-x-0 md:border-t-0 dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-100"
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 md:px-4">
         {/* Logo: على الموبايل بيظهر بس لو مش عامل لوجن */}
