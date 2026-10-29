@@ -497,7 +497,10 @@ export default function PostCard({
             >
               <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
             </svg>
+            <span className="font-semibold text-[10px] md:text-sm">
+
             {isBookmarked ? "Saved" : "Save post"}
+            </span>
           </button>
         </div>
 
