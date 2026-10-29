@@ -126,7 +126,7 @@ export default function PostDetails() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* الجانب الأيمن / الأيسر: البوست الأساسي (يأخذ مساحة أكبر مثلاً 7 أعمدة) */}
-          <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+          <div className="lg:col-span-7 rounded-2xl shadow-sm overflow-hidden">
             {postData && <PostCard post={postData} PostDetails />}
           </div>
 
