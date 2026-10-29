@@ -205,7 +205,7 @@ export default function PostCard({
   const isShared = !!sharedPost || !!(post as any).isShare;
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="w-full md:container md:mx-auto md:px-4">
       <article className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#18181B]">
         {/* =========================
             Header: user + three dots
