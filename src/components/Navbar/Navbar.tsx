@@ -231,9 +231,11 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
           >
             Change profile picture
           </li>
+          <Link to="/Profile/Edit">
           <li className="flex w-full cursor-pointer items-center rounded-xl p-2.5 transition-colors hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400">
             Settings
           </li>
+          </Link>
           <li
             onClick={handleLogout}
             className="flex w-full cursor-pointer items-center rounded-xl p-2.5 text-red-500 transition-colors hover:bg-red-500/10 dark:text-red-400"
