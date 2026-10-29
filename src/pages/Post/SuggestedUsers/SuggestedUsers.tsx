@@ -109,11 +109,28 @@ export default function SuggestedUsersPage() {
 
   function goTo(next: number) {
     setPage(next);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  // نافذة أرقام الصفحات: 5 أرقام حوالين الصفحة الحالية
+  const lastPage = data?.totalPages;
+  const WINDOW = 5;
+  let startPage = Math.max(1, page - Math.floor(WINDOW / 2));
+  if (lastPage) {
+    startPage = Math.max(1, Math.min(startPage, lastPage - WINDOW + 1));
+  }
+  const endPage = lastPage
+    ? Math.min(lastPage, startPage + WINDOW - 1)
+    : page + (data?.hasNext ? 1 : 0);
+  const pageNumbers = Array.from(
+    { length: Math.max(1, endPage - startPage + 1) },
+    (_, i) => startPage + i,
+  );
+
+  const pagerBtn =
+    "flex h-10 min-w-10 cursor-pointer items-center justify-center rounded-xl border border-gray-200 px-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-gray-100 dark:hover:bg-slate-800";
+
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8 transition-colors duration-300 dark:bg-slate-950">
+    <div className="min-h-screen px-4 py-8 transition-colors duration-300 ">
       <div className="mx-auto max-w-2xl">
         <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#18181B]">
           {/* Header */}
@@ -238,34 +255,88 @@ export default function SuggestedUsersPage() {
           </div>
 
           {/* Pagination */}
-          <footer className="flex flex-wrap items-center gap-2 border-t border-gray-100 px-5 py-4 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => goTo(page - 1)}
-              disabled={page === 1 || isFetching}
-              className="flex cursor-pointer items-center gap-1 rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-gray-100 dark:hover:bg-slate-800"
+          <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-5 py-4 dark:border-slate-800">
+            <nav
+              aria-label="Pagination"
+              className="flex flex-wrap items-center gap-1.5"
             >
-              <ArrowLeft2 size="16" color="currentColor" />
-              Previous
-            </button>
+              {/* « أول صفحة */}
+              <button
+                type="button"
+                onClick={() => goTo(1)}
+                disabled={page === 1}
+                aria-label="First page"
+                className={pagerBtn}
+              >
+                <span className="flex -space-x-2.5">
+                  <ArrowLeft2 size="16" color="currentColor" />
+                  <ArrowLeft2 size="16" color="currentColor" />
+                </span>
+              </button>
 
-            <span className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-gray-900 px-3 text-sm font-bold text-white dark:bg-white dark:text-gray-900">
-              {page}
-            </span>
+              {/* ‹ السابق */}
+              <button
+                type="button"
+                onClick={() => goTo(page - 1)}
+                disabled={page === 1}
+                aria-label="Previous page"
+                className={pagerBtn}
+              >
+                <ArrowLeft2 size="16" color="currentColor" />
+              </button>
 
-            <button
-              type="button"
-              onClick={() => goTo(page + 1)}
-              disabled={!data?.hasNext || isFetching}
-              className="flex cursor-pointer items-center gap-1 rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-gray-100 dark:hover:bg-slate-800"
-            >
-              Next
-              <ArrowRight2 size="16" color="currentColor" />
-            </button>
+              {/* أرقام الصفحات */}
+              {pageNumbers.map((n) =>
+                n === page ? (
+                  <span
+                    key={n}
+                    aria-current="page"
+                    className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-gray-900 px-3 text-sm font-bold text-white dark:bg-white dark:text-gray-900"
+                  >
+                    {n}
+                  </span>
+                ) : (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => goTo(n)}
+                    aria-label={`Page ${n}`}
+                    className={pagerBtn}
+                  >
+                    {n}
+                  </button>
+                ),
+              )}
 
-            <span className="ms-auto text-sm text-gray-500 dark:text-gray-400">
+              {/* › التالي */}
+              <button
+                type="button"
+                onClick={() => goTo(page + 1)}
+                disabled={!data?.hasNext}
+                aria-label="Next page"
+                className={pagerBtn}
+              >
+                <ArrowRight2 size="16" color="currentColor" />
+              </button>
+
+              {/* » آخر صفحة */}
+              <button
+                type="button"
+                onClick={() => lastPage && goTo(lastPage)}
+                disabled={!lastPage || page === lastPage}
+                aria-label="Last page"
+                className={pagerBtn}
+              >
+                <span className="flex -space-x-2.5">
+                  <ArrowRight2 size="16" color="currentColor" />
+                  <ArrowRight2 size="16" color="currentColor" />
+                </span>
+              </button>
+            </nav>
+
+            <span className="text-sm text-gray-500 dark:text-gray-400">
               Page <strong className="text-gray-900 dark:text-gray-100">{page}</strong>
-              {data?.totalPages ? ` of ${data.totalPages}` : ""}
+              {lastPage ? ` of ${lastPage}` : ""}
             </span>
           </footer>
         </section>
