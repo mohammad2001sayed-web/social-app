@@ -83,3 +83,61 @@ export async function toggleFollowUser(userId: string) {
     { headers: { token: getToken() } },
   );
 }
+
+
+
+
+
+const authHeaders = () => ({
+  headers: { token: localStorage.getItem("tkn") || "" },
+});
+
+// المستخدمين المقترحين
+export async function getSuggestedUsersApi(limit = 5) {
+  const res = await axios.get(
+    `${getBaseUrl()}/users/suggestions?limit=${limit}`,
+    authHeaders(),
+  );
+  console.log("suggestions:", res.data); // مؤقتًا، امسحيه بعد ما يشتغل
+  const d = res.data?.data ?? res.data;
+  const list = d?.suggestions ?? d?.users ?? (Array.isArray(d) ? d : []);
+  return Array.isArray(list) ? list : [];
+}
+
+// متابعة مستخدم
+export async function followUserApi(userId: string) {
+  return await axios.put(
+    `${getBaseUrl()}/users/${userId}/follow`,
+    {},
+    authHeaders(),
+  );
+}
+
+
+export async function getSuggestedUsersPageApi({
+  page,
+  limit = 5,
+}: {
+  page: number;
+  limit?: number;
+}) {
+  const res = await axios.get(
+    `${getBaseUrl()}/users/suggestions?page=${page}&limit=${limit}`,
+    authHeaders(),
+  );
+
+  const root = res.data;
+  const d = root?.data ?? root;
+  const list = d?.suggestions ?? d?.users ?? (Array.isArray(d) ? d : []);
+  const users = Array.isArray(list) ? list : [];
+
+  const pg = root?.meta?.pagination ?? d?.pagination;
+  const totalPages: number | undefined =
+    pg?.numberOfPages ?? pg?.totalPages ?? undefined;
+
+  return {
+    users,
+    totalPages,
+    hasNext: totalPages ? page < totalPages : users.length === limit,
+  };
+}

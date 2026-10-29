@@ -10,6 +10,7 @@ import {
   getBookmarks,
   getFollowList,
 } from "./Profile.api";
+import SuggestedUsersPage from "../../pages/Post/SuggestedUsers/SuggestedUsers";
 
 type TabKey = "posts" | "followers" | "following" | "bookmarks";
 
@@ -207,6 +208,8 @@ export default function Profile() {
             {renderPosts(bookmarks.data, bookmarks.isLoading, "No saved posts yet.")}
           </Tabs.Panel>
         </Tabs>
+
+        <SuggestedUsersPage/>
       </div>
     </main>
   );
