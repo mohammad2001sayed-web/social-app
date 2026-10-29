@@ -1,14 +1,13 @@
 import { Avatar, Button } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Monero,
   Moon,
   Sun1,
   Home2,
   Profile as ProfileIcon,
   Notification,
 } from "iconsax-react";
-import { useContext, useState, useRef } from "react";
+import { useContext, useState, useRef, useId } from "react";
 import { Link, NavLink, useNavigate } from "react-router";
 import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
 import { getUnreadCount, uploadProfilePhoto } from "./Navbar.api";
@@ -77,6 +76,36 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
     { name: "Profile", href: "/profile", Icon: ProfileIcon },
     { name: "Notifications", href: "/notifications", Icon: Notification },
   ];
+  const APP_NAME = "Circle"; // غيريه لاسم مشروعك
+
+/* ---------- Logo: فقاعة شات + قلب ---------- */
+function Logo({ size = 36 }: { size?: number }) {
+  const id = useId();
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" aria-hidden>
+      <defs>
+        <linearGradient id={id} x1="4" y1="4" x2="44" y2="44">
+          <stop offset="0" stopColor="#6366f1" />
+          <stop offset="0.55" stopColor="#8b5cf6" />
+          <stop offset="1" stopColor="#ec4899" />
+        </linearGradient>
+      </defs>
+      <rect width="48" height="48" rx="14" fill={`url(#${id})`} />
+      {/* الفقاعة */}
+      <path
+        d="M14 15.5C14 13.6 15.6 12 17.5 12h13c1.9 0 3.5 1.6 3.5 3.5v9c0 1.9-1.6 3.5-3.5 3.5H26l-5.2 5.1c-.6.6-1.6.2-1.6-.7V28h-1.7c-1.9 0-3.5-1.6-3.5-3.5v-9z"
+        fill="#fff"
+      />
+      {/* القلب */}
+      <path
+        d="M24 25.2s-4.6-2.9-4.6-5.8c0-1.5 1.1-2.5 2.4-2.5.9 0 1.7.5 2.2 1.3.5-.8 1.3-1.3 2.2-1.3 1.3 0 2.4 1 2.4 2.5 0 2.9-4.6 5.8-4.6 5.8z"
+        fill="#ec4899"
+      />
+      {/* نقطة إشعار */}
+      <circle cx="36" cy="12" r="3.5" fill="#fbbf24" stroke="#fff" strokeWidth="1.5" />
+    </svg>
+  );
+}
 
   return (
     <nav
@@ -84,13 +113,13 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 md:px-4">
         {/* Logo: على الموبايل بيظهر بس لو مش عامل لوجن */}
-        <Link
-          to=""
-          aria-label="Home"
-          className={`items-center ${userToken ? "hidden md:flex" : "flex"}`}
-        >
-          <Monero size="32" color="#37d67a" />
-        </Link>
+                <Link to="/" aria-label={APP_NAME} className="hidden md:flex items-center gap-2">
+            <Logo />
+            <span className="bg-linear-to-r from-indigo-500 to-pink-500 bg-clip-text text-xl font-extrabold tracking-tight text-transparent">
+              {APP_NAME}
+            </span>
+          </Link>
+
 
         {/* Links (أيقونات بس) */}
         {userToken && (
