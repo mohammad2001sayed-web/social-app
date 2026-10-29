@@ -109,7 +109,7 @@ export default function PostDetails() {
   // UI (Split View: Post on Left/Right, Comments on the other side)
   // =========================
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-8 px-4 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-8 md:px-4 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         
         {/* زر العودة */}
