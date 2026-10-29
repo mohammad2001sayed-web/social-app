@@ -1,4 +1,4 @@
-import { Avatar, Form, Input, TextArea } from "@heroui/react";
+import { Avatar, Form, TextArea } from "@heroui/react";
 import type { User } from "../../Login/login.interface";
 import { DocumentUpload } from "iconsax-react";
 import { useForm } from "react-hook-form";
