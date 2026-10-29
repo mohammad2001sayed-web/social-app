@@ -1,42 +1,61 @@
 import { Avatar, Button } from "@heroui/react";
-import axios from "axios";
-import { Monero, Moon, Sun1 } from "iconsax-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Monero,
+  Moon,
+  Sun1,
+  Home2,
+  Profile as ProfileIcon,
+  Notification,
+} from "iconsax-react";
 import { useContext, useState, useRef } from "react";
 import { Link, NavLink, useNavigate } from "react-router";
 import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
+import { getUnreadCount, uploadProfilePhoto } from "./Navbar.api";
 
 interface NavbarProps {
   darkmode: boolean;
   setdarkmode: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
-  const [isdropdown, setisdropdown] = useState<boolean>(false);
-  const [isopen, setisopen] = useState<boolean>(false);
+// الكلمة اللي بتظهر لما تعملي hover (ديسكتوب بس)
+function Tip({ label }: { label: string }) {
+  return (
+    <span
+      role="tooltip"
+      className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 md:block dark:bg-slate-100 dark:text-slate-900"
+    >
+      {label}
+    </span>
+  );
+}
 
-  // 1. استدعاء userToken و setUserToken من الـ AuthContext
+const itemBase =
+  "group relative flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-200 md:h-10 md:w-10";
+const itemActive =
+  "bg-indigo-600 text-white shadow-md shadow-indigo-500/40";
+const itemIdle =
+  "text-slate-500 hover:bg-slate-100 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400";
+
+export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
+  const [isdropdown, setisdropdown] = useState(false);
+
   const { userData, setuserData, getUserData, userToken, setUserToken } =
     useContext(AuthContext);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useNavigate();
 
-  function handleChangePhoto() {
-    fileInputRef.current?.click();
-  }
+  // عدد الإشعارات الجديدة، بيتحدث كل 30 ثانية
+  const { data: unread = 0 } = useQuery({
+    queryKey: ["unreadCount"],
+    queryFn: getUnreadCount,
+    enabled: !!userToken,
+    refetchInterval: 30_000,
+  });
 
   async function uploadPhoto(file: File) {
     try {
-      const formData = new FormData();
-      formData.append("photo", file);
-
-      const baseUrl =
-        import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL;
-
-      await axios.put(`${baseUrl}/users/upload-photo`, formData, {
-        headers: {
-          token: localStorage.getItem("tkn"),
-        },
-      });
-
+      await uploadProfilePhoto(file);
       const updatedUser = await getUserData();
       setuserData(updatedUser);
       setisdropdown(false);
@@ -45,15 +64,6 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
     }
   }
 
-  const links = [
-    { name: "Posts", href: "/post" },
-    { name: "Profile", href: "/profile" },
-    { name: "notifications", href: "/notifications" },
-  ];
-
-  const router = useNavigate();
-
-  // 2. تحديث دالة الـ Logout لمسح الـ userToken وإعادة التوجيه صح
   function handleLogout() {
     localStorage.removeItem("tkn");
     setUserToken(null);
@@ -62,43 +72,102 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
     router("/login");
   }
 
+  const links = [
+    { name: "Posts", href: "/post", Icon: Home2 },
+    { name: "Profile", href: "/profile", Icon: ProfileIcon },
+    { name: "Notifications", href: "/notifications", Icon: Notification },
+  ];
+
   return (
-    <>
-      {/* خلفية الـ Navbar الأساسية */}
-      <nav className="bg-slate-400 pb-1 dark:bg-[#091527] text-slate-800 dark:text-slate-100 shadow-xl fixed w-full z-20 top-0 inset-s-0 border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
-        <div className="max-w-7xl flex flex-wrap items-center justify-between mx-auto px-4 pt-2">
-          <Link
-            to=""
-            className="flex items-center space-x-3 rtl:space-x-reverse"
+    <nav
+      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 rounded-2xl border border-slate-200 bg-white/90 text-slate-800 shadow-xl backdrop-blur-xl transition-colors duration-300 md:inset-x-0 md:bottom-auto md:top-0 md:rounded-none md:border-x-0 md:border-t-0 dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-100"
+    >
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 md:px-4">
+        {/* Logo: على الموبايل بيظهر بس لو مش عامل لوجن */}
+        <Link
+          to=""
+          aria-label="Home"
+          className={`items-center ${userToken ? "hidden md:flex" : "flex"}`}
+        >
+          <Monero size="32" color="#37d67a" />
+        </Link>
+
+        {/* Links (أيقونات بس) */}
+        {userToken && (
+          <ul className="flex flex-1 items-center justify-around md:flex-none md:gap-3">
+            {links.map(({ name, href, Icon }) => {
+              const isBell = href === "/notifications";
+              return (
+                <li key={href}>
+                  <NavLink
+                    to={href}
+                    aria-label={name}
+                    className={({ isActive }) =>
+                      `${itemBase} ${isActive ? itemActive : itemIdle}`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <Icon
+                          size="24"
+                          color="currentColor"
+                          // الجرس بيتملي لو فيه إشعار جديد
+                          variant={
+                            isActive || (isBell && unread > 0)
+                              ? "Bold"
+                              : "Outline"
+                          }
+                        />
+
+                        {isBell && unread > 0 && (
+                          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px]">
+                            <span className="absolute inset-0 animate-ping rounded-full bg-red-400 opacity-60" />
+                            <span className="relative flex h-full min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-slate-900">
+                              {unread > 99 ? "99+" : unread}
+                            </span>
+                          </span>
+                        )}
+
+                        <Tip label={name} />
+                      </>
+                    )}
+                  </NavLink>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {/* Controls */}
+        <div className="flex items-center gap-1 md:gap-3">
+          <button
+            type="button"
+            aria-label={darkmode ? "Light mode" : "Dark mode"}
+            onClick={() => {
+              const newMode = !darkmode;
+              setdarkmode(newMode);
+              localStorage.setItem("darkmode", String(newMode));
+            }}
+            className={`${itemBase} ${itemIdle} cursor-pointer`}
           >
-            <Monero size="32" color="#37d67a" />
-          </Link>
+            {darkmode ? (
+              <Moon size="24" color="#6366f1" variant="Bold" />
+            ) : (
+              <Sun1 size="24" color="#f59e0b" variant="Bold" />
+            )}
+            <Tip label={darkmode ? "Light mode" : "Dark mode"} />
+          </button>
 
-          <div className="flex items-center md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-            <div
-              className="cursor-pointer me-3 p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-              onClick={() => {
-                const newMode = !darkmode;
-                setdarkmode(newMode);
-                localStorage.setItem("darkmode", String(newMode));
-              }}
-            >
-              {darkmode ? (
-                <Moon size="28" color="#6366f1" />
-              ) : (
-                <Sun1 size="28" color="#f59e0b" />
-              )}
-            </div>
-
-            {/* 3. الاعتماد على userToken لمعرفة هل المستخدم مسجل دخول أم لا */}
-            {userToken ? (
+          {userToken ? (
+            <>
               <button
-                onClick={() => setisdropdown(!isdropdown)}
                 type="button"
-                className="flex cursor-pointer text-sm bg-neutral-primary rounded-full md:me-0 focus:ring-2 focus:ring-indigo-500"
-                id="user-menu-button"
+                aria-label="Account"
+                aria-expanded={isdropdown}
+                onClick={() => setisdropdown((v) => !v)}
+                className="group relative flex cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
-                <Avatar className="ring-2 ring-indigo-500/40 shadow-md">
+                <Avatar className="ring-2 ring-indigo-500/40">
                   <Avatar.Image
                     alt={userData?.name || "User"}
                     src={userData?.photo}
@@ -109,134 +178,70 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
                       : "U"}
                   </Avatar.Fallback>
                 </Avatar>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      uploadPhoto(file);
-                    }
-                  }}
-                />
+                <Tip label="Account" />
               </button>
-            ) : (
-              <div className="flex gap-2.5">
-                <Link
-                  to="/login"
-                  className="bg-teal-400 hover:bg-teal-600 rounded-md px-2 py-0.5 transition-colors"
-                >
-                  <Button className=" pointer-events-none">Login</Button>
-                </Link>
-                <Link
-                  to="/register"
-                  className="bg-violet-400 hover:bg-violet-500 dark:hover:bg-violet-600 rounded-md px-2 py-0.5 transition-colors"
-                >
-                  <Button className=" pointer-events-none">Register</Button>
-                </Link>
-              </div>
-            )}
 
-            {/* Dropdown menu */}
-            <div
-              className={`z-50 ${
-                isdropdown ? "block" : "hidden"
-              } absolute top-full right-4 bg-white dark:bg-[#0f1f38] border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl shadow-2xl w-48 overflow-hidden`}
-              id="user-dropdown"
-            >
-              <div className="px-4 py-3 text-sm border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-[#091527]/50">
-                <span className="block font-semibold">
-                  {userData?.name || "User"}
-                </span>
-                <span className="block truncate text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-                  {userData?.email || ""}
-                </span>
-              </div>
-              <ul className="p-2 text-sm font-medium">
-                <li
-                  onClick={handleChangePhoto}
-                  className="inline-flex items-center w-full p-2.5 rounded-xl cursor-pointer hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                >
-                  Change profile picture
-                </li>
-                <li className="inline-flex items-center w-full p-2.5 rounded-xl cursor-pointer hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                  Settings
-                </li>
-                <li
-                  onClick={handleLogout}
-                  className="inline-flex items-center w-full p-2.5 rounded-xl cursor-pointer hover:bg-red-500/10 text-red-500 dark:text-red-400 transition-colors"
-                >
-                  Sign out
-                </li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => setisopen(!isopen)}
-              type="button"
-              className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm rounded-base md:hidden hover:bg-neutral-secondary-soft focus:outline-none"
-            >
-              <span className="sr-only">Open main menu</span>
-              <svg
-                className="w-6 h-6"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width={24}
-                height={24}
-                fill="none"
-                viewBox="0 0 24 24"
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadPhoto(file);
+                }}
+              />
+            </>
+          ) : (
+            <div className="flex gap-2">
+              <Link
+                to="/login"
+                className="rounded-md bg-teal-400 px-2 py-0.5 transition-colors hover:bg-teal-600"
               >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeWidth={2}
-                  d="M5 7h14M5 12h14M5 17h14"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <div
-            className={`items-center justify-between ${
-              isopen ? "block" : "hidden"
-            } w-full md:flex md:w-auto md:order-1`}
-            id="navbar-user"
-          >
-            <ul className="font-medium flex flex-col md:flex-row md:space-x-6 rtl:space-x-reverse mt-4 md:mt-0">
-              {/* 4. إظهار الروابط بمجرد وجود userToken */}
-              {userToken &&
-                links.map((link) => (
-                  <li key={link.href}>
-                    <NavLink
-                      to={link.href}
-                      className={({ isActive }) =>
-                        `relative px-8 py-3 font-bold transition-all duration-300 capitalize flex flex-col items-center justify-center gap-1 ${
-                          isActive
-                            ? "bg-slate-200 dark:bg-[#030712] text-indigo-600 dark:text-indigo-400 rounded-t-2xl " +
-                              "shadow-[inset_0_4px_8px_rgba(0,0,0,0.25),inset_0_-1px_2px_rgba(255,255,255,0.1)] " +
-                              "border-t border-x border-indigo-500/30 dark:border-indigo-500/20 " +
-                              "before:content-[''] before:absolute before:-left-4 before:bottom-0 before:w-4 before:h-4 " +
-                              "before:rounded-br-2xl before:shadow-[4px_4px_0_0_#e2e8f0] dark:before:shadow-[4px_4px_0_0_#030712] " +
-                              "after:content-[''] after:absolute after:-right-4 after:bottom-0 after:w-4 after:h-4 " +
-                              "after:rounded-bl-2xl after:shadow-[-4px_4px_0_0_#e2e8f0] dark:after:shadow-[-4px_4px_0_0_#030712]"
-                            : "text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white rounded-t-xl hover:bg-slate-200/50 dark:hover:bg-slate-800/40"
-                        }`
-                      }
-                    >
-                      <span>
-                        {link.name.at(0)?.toUpperCase() + link.name.slice(1)}
-                      </span>
-
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400 shadow-[0_0_8px_2px_rgba(99,102,241,0.8)] animate-pulse" />
-                    </NavLink>
-                  </li>
-                ))}
-            </ul>
-          </div>
+                <Button className="pointer-events-none">Login</Button>
+              </Link>
+              <Link
+                to="/register"
+                className="rounded-md bg-violet-400 px-2 py-0.5 transition-colors hover:bg-violet-500 dark:hover:bg-violet-600"
+              >
+                <Button className="pointer-events-none">Register</Button>
+              </Link>
+            </div>
+          )}
         </div>
-      </nav>
-    </>
+      </div>
+
+      {/* Dropdown: لفوق على الموبايل، لتحت على الديسكتوب */}
+      <div
+        id="user-dropdown"
+        className={`absolute bottom-full right-0 z-50 mb-2 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-2xl md:bottom-auto md:right-4 md:top-full md:mb-0 md:mt-1 dark:border-slate-700 dark:bg-[#0f1f38] dark:text-white ${
+          isdropdown ? "block" : "hidden"
+        }`}
+      >
+        <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 text-sm dark:border-slate-800 dark:bg-[#091527]/50">
+          <span className="block font-semibold">{userData?.name || "User"}</span>
+          <span className="mt-0.5 block truncate text-xs text-slate-500 dark:text-slate-400">
+            {userData?.email || ""}
+          </span>
+        </div>
+        <ul className="p-2 text-sm font-medium">
+          <li
+            onClick={() => fileInputRef.current?.click()}
+            className="flex w-full cursor-pointer items-center rounded-xl p-2.5 transition-colors hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
+          >
+            Change profile picture
+          </li>
+          <li className="flex w-full cursor-pointer items-center rounded-xl p-2.5 transition-colors hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400">
+            Settings
+          </li>
+          <li
+            onClick={handleLogout}
+            className="flex w-full cursor-pointer items-center rounded-xl p-2.5 text-red-500 transition-colors hover:bg-red-500/10 dark:text-red-400"
+          >
+            Sign out
+          </li>
+        </ul>
+      </div>
+    </nav>
   );
 }
