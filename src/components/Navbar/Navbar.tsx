@@ -120,9 +120,9 @@ export default function Navbar({ darkmode, setdarkmode }: NavbarProps) {
                         />
 
                         {isBell && unread > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px]">
+                          <span className="absolute -right-1 -top-1 flex h-4.5 min-w-4.5">
                             <span className="absolute inset-0 animate-ping rounded-full bg-red-400 opacity-60" />
-                            <span className="relative flex h-full min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-slate-900">
+                            <span className="relative flex h-full min-w-4.5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-slate-900">
                               {unread > 99 ? "99+" : unread}
                             </span>
                           </span>
