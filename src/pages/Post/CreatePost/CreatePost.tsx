@@ -1,4 +1,4 @@
-import { Avatar, Form, Input } from "@heroui/react";
+import { Avatar, Form, Input, TextArea } from "@heroui/react";
 import type { User } from "../../Login/login.interface";
 import { DocumentUpload } from "iconsax-react";
 import { useForm } from "react-hook-form";
@@ -110,11 +110,11 @@ export default function CreatePost({ user }: { user: User }) {
             <Avatar.Fallback>{name.charAt(0).toUpperCase()}</Avatar.Fallback>
             </Avatar>
 
-            <Input
+            <TextArea
               {...register("body")}
-              className="grow"
-              type="text"
-              placeholder="Create your post..."
+              className="grow resize-none placeholder:text-gray-500 placeholder:dark:text-gray-400 text-[16px]"
+              rows={3}
+              placeholder="Create Your Post..."
             />
 
             <DocumentUpload
