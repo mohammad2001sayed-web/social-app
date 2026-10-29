@@ -73,3 +73,13 @@ export async function toggleBookmarkPost(postId: string) {
     }
   );
 }
+
+
+// دالة دعم / إلغاء دعم البوست
+export async function toggleFollowUser(userId: string) {
+  return await axios.put(
+    `${getBaseUrl()}/users/${userId}/follow`,
+    {},
+    { headers: { token: getToken() } },
+  );
+}

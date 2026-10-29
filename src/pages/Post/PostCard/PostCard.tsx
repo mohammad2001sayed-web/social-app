@@ -8,6 +8,9 @@ import {
   More,
   Edit2,
   Trash,
+  UserAdd,
+  TickCircle,
+  UserTick,
 } from "iconsax-react";
 import Coment from "../../../components/Coment/Coment";
 import { Link } from "react-router";
@@ -16,7 +19,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { FnUpdatePost, FnDeletePost } from "../CreatPost.abi";
-import { toggleLikePost } from "../Post.api";
+import { toggleLikePost, toggleFollowUser } from "../Post.api";
 import SharePostModal from "./SharePostModal/SharePostModal";
 import { timeAgo } from "./timenow";
 import { useBookmark } from "../useBookmark";
@@ -137,6 +140,32 @@ export default function PostCard({
   });
 
   // =========================
+  // Follow / Unfollow
+  // =========================
+  const serverFollowing = !!(post.user as any).isFollowing;
+  const [isFollowing, setIsFollowing] = useState(serverFollowing);
+
+  // لو الداتا اتحدثت من السيرفر
+  useEffect(() => {
+    setIsFollowing(serverFollowing);
+  }, [serverFollowing]);
+
+  const { mutate: handleFollow, isPending: isFollowPending } = useMutation({
+    mutationFn: () => toggleFollowUser(post.user._id),
+    onSuccess: () => {
+      const next = !isFollowing;
+      setIsFollowing(next);
+      toast.success(next ? `Followed ${name}` : `Unfollowed ${name}`);
+      queryClient.invalidateQueries({ queryKey: ["allPost"] });
+      queryClient.invalidateQueries({ queryKey: ["PostDetails", _id] });
+      queryClient.invalidateQueries({ queryKey: ["following"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || "Something went wrong");
+    },
+  });
+
+  const showFollow = !!userId && !isMyPost; // =========================
   // Handlers
   // =========================
   function openEdit() {
@@ -208,7 +237,7 @@ export default function PostCard({
     <div className="w-full md:container md:mx-auto md:px-4">
       <article className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#18181B]">
         {/* =========================
-            Header: user + three dots
+            Header: user + follow + three dots
         ========================= */}
         <header className="flex items-center gap-3 px-4 pt-4">
           <Link
@@ -228,12 +257,30 @@ export default function PostCard({
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {timeAgo(createdAt)}
-                {/* لو عندك متغير بيحدد هل البوست ده مشارك ولا لأ، سيبه */}
-                {/* {isShared && " · shared a post"} */}
               </p>
             </div>
           </Link>
 
+          {showFollow && !isEditing && (
+            <button
+              type="button"
+              onClick={() => handleFollow()}
+              disabled={isFollowPending}
+              aria-label={isFollowing ? "Unfollow" : "Follow"}
+              title={isFollowing ? "Unfollow" : "Follow"}
+              className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-colors disabled:opacity-50 ${
+                isFollowing
+                  ? "bg-green-100 text-green-600 hover:bg-red-100 hover:text-red-600 dark:bg-green-500/10 dark:hover:bg-red-500/10"
+                  : "text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-slate-800"
+              }`}
+            >
+              {isFollowing ? (
+                <UserTick size="22" variant="Bold" color="currentColor" />
+              ) : (
+                <UserAdd size="22" color="currentColor" />
+              )}
+            </button>
+          )}
           {isMyPost && !isEditing && (
             <div className="relative" ref={menuRef}>
               <button
@@ -436,7 +483,7 @@ export default function PostCard({
         )}
 
         {/* =========================
-            Action bar: Like / Comment / Share
+            Action bar: Like / Comment / Share / Save
         ========================= */}
         <div className="mx-4 flex items-center border-t border-gray-200 py-1 dark:border-slate-800">
           <button
@@ -476,13 +523,14 @@ export default function PostCard({
           >
             <Share size="22" color="currentColor" />
           </button>
+
           <button
             type="button"
             onClick={() => handleBookmark()}
             disabled={isBookmarking}
             className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-slate-800 ${
               isBookmarked
-                ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+                ? "font-semibold text-indigo-600 dark:text-indigo-400"
                 : "text-gray-600 dark:text-gray-300"
             }`}
           >
@@ -497,9 +545,8 @@ export default function PostCard({
             >
               <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
             </svg>
-            <span className="font-semibold text-[10px] md:text-sm">
-
-            {isBookmarked ? "Saved" : "Save post"}
+            <span className="text-[10px] font-semibold md:text-sm">
+              {isBookmarked ? "Saved" : "Save post"}
             </span>
           </button>
         </div>
@@ -567,7 +614,7 @@ export default function PostCard({
                 type="button"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="cursor-pointer rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </button>
