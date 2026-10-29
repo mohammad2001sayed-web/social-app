@@ -9,7 +9,6 @@ import {
   Edit2,
   Trash,
   UserAdd,
-  TickCircle,
   UserTick,
 } from "iconsax-react";
 import Coment from "../../../components/Coment/Coment";
