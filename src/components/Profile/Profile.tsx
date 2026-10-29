@@ -1,206 +1,213 @@
-import { Avatar, Card } from "@heroui/react";
-import { useContext } from "react";
-import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
-import type { AllPostRisponse } from "../../pages/Post/Post.interface";
-import axios from "axios";
+import { Avatar, Tabs } from "@heroui/react";
+import { useContext, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import PostCard from "../../pages/Post/PostCard/PostCard";
 import { Link } from "react-router";
+import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
+import PostCard from "../../pages/Post/PostCard/PostCard";
+import UserList from "./UserList";
+import {
+  getUserPosts,
+  getBookmarks,
+  getFollowList,
+} from "./Profile.api";
+
+type TabKey = "posts" | "followers" | "following" | "bookmarks";
 
 export default function Profile() {
   const { userData } = useContext(AuthContext);
+  const userId = userData?._id;
 
-  const { data: posts, isLoading } = useQuery({
-    queryKey: ["allPost", userData?._id],
+  // التاب الـ active واحد، وبيتحكم في الإحصائيات فوق والتابس تحت
+  const [tab, setTab] = useState<TabKey>("posts");
 
-    queryFn: async () => {
-      const response = await axios.get<AllPostRisponse>(
-        `${import.meta.env.VITE_BASE_URL}/users/${userData?._id}/posts`,
-        {
-          headers: {
-            token: localStorage.getItem("tkn"),
-          },
-        },
-      );
+  // كل تاب بيجيب داتاه لما يتفتح بس
+  const posts = useQuery({
+    queryKey: ["allPost", userId],
+    queryFn: () => getUserPosts(userId!),
+    enabled: !!userId && tab === "posts",
+  });
 
-      return response;
-    },
+  const bookmarks = useQuery({
+    queryKey: ["savedPosts"],
+    queryFn: getBookmarks,
+    enabled: !!userId && tab === "bookmarks",
+  });
 
-    select: (data) => data.data.data.posts,
-    enabled: !!userData?._id,
+  const followers = useQuery({
+    queryKey: ["followers", userId],
+    queryFn: () => getFollowList(userId!, "followers"),
+    enabled: !!userId && tab === "followers",
+  });
+
+  const following = useQuery({
+    queryKey: ["following", userId],
+    queryFn: () => getFollowList(userId!, "following"),
+    enabled: !!userId && tab === "following",
   });
 
   if (!userData) {
-    return <p className="p-5 text-white">Loading...</p>;
+    return <p className="p-5 text-gray-700 dark:text-white">Loading...</p>;
+  }
+
+  const cover: string | undefined = (userData as any).cover;
+
+  const stats: { key: TabKey; label: string; value: number }[] = [
+    { key: "followers", label: "Followers", value: userData.followersCount },
+    { key: "following", label: "Following", value: userData.followingCount },
+    { key: "bookmarks", label: "Bookmarks", value: userData.bookmarksCount },
+  ];
+
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "posts", label: "Posts" },
+    { key: "followers", label: "Followers" },
+    { key: "following", label: "Following" },
+    { key: "bookmarks", label: "Bookmarks" },
+  ];
+
+  function renderPosts(list: any[] | undefined, loading: boolean, empty: string) {
+    if (loading) {
+      return (
+        <p className="py-10 text-center text-gray-500 dark:text-gray-400">
+          Loading...
+        </p>
+      );
+    }
+    if (!list || list.length === 0) {
+      return (
+        <p className="py-10 text-center text-lg text-gray-500 dark:text-gray-400">
+          {empty}
+        </p>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-4">
+        {list.map((post) => (
+          <PostCard key={post._id} post={post} />
+        ))}
+      </div>
+    );
   }
 
   return (
-    <>
-      {/* Animated Background */}
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          fixed inset-0 -z-10 overflow-hidden
-          bg-slate-950
-          before:content-['']
-          before:absolute before:inset-[-50%]
-          before:-rotate-45
-          before:bg-[radial-gradient(4px_100px_at_0px_235px,#ff8c11,transparent),radial-gradient(4px_100px_at_300px_235px,#ff7700,transparent),radial-gradient(4px_100px_at_0px_150px,#f97910,transparent),radial-gradient(4px_100px_at_300px_150px,#ff8012,transparent),radial-gradient(4px_100px_at_150px_0px,#a855f7,transparent),radial-gradient(4px_100px_at_150px_300px,#8b5cf6,transparent),radial-gradient(4px_100px_at_0px_75px,#3b82f6,transparent),radial-gradient(4px_100px_at_300px_75px,#2563eb,transparent)]
-          before:bg-size-[300px_235px]
-          before:animate-[gradient-flow_20s_linear_infinite]
-        "
-      />
+    <main className="min-h-screen bg-gray-100 pb-10 dark:bg-[#0b0b0f]">
+      <div className="mx-auto w-full md:max-w-4xl lg:max-w-5xl">
+        {/* =========================
+            Header
+        ========================= */}
+        <section className="overflow-hidden bg-white shadow-sm md:rounded-b-2xl dark:bg-[#18181B]">
+          <div className="relative h-44 w-full sm:h-56 md:h-72">
+            {cover ? (
+              <img src={cover} alt="Cover" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full bg-linear-to-br from-indigo-500 via-violet-500 to-sky-400" />
+            )}
+          </div>
 
-      {/* Profile Content */}
-      <main className="relative z-0 min-h-screen">
-        <div className="mx-auto my-24 w-10/12">
-          {/* Cover and User Information */}
-          <Card className="overflow-hidden bg-gray-400 text-violet-800 dark:bg-olive-500 dark:text-amber-950">
-            {/* Cover Image */}
-            <div className="h-64">
-              <img
-                src={userData.photo}
-                alt="Cover"
-                className="h-full w-full rounded-2xl object-cover"
-              />
-            </div>
+          <div className="px-4 pb-4 md:px-8">
+            <div className="flex flex-col items-center md:flex-row md:items-end md:gap-6">
+              <Avatar className="-mt-16 h-32 w-32 shrink-0 border-4 border-white md:-mt-20 md:h-40 md:w-40 dark:border-[#18181B]">
+                <Avatar.Image src={userData.photo} alt={userData.name} />
+                <Avatar.Fallback>{userData.name.charAt(0)}</Avatar.Fallback>
+              </Avatar>
 
-            {/* User Info */}
-            <div className="px-6 pb-6">
-              <div className="flex items-end justify-between">
-                {/* Avatar */}
-                <div className="-mt-16">
-                  <Avatar className="h-32 w-32 border-4 border-white">
-                    <Avatar.Image
-                      src={userData.photo}
-                      alt={userData.name}
-                    />
-
-                    <Avatar.Fallback>
-                      {userData.name.charAt(0)}
-                    </Avatar.Fallback>
-                  </Avatar>
-                </div>
-
-                {/* Edit Button - Desktop */}
-                <Link to="/Profile/Edit">
-                  <button
-                    type="button"
-                    className="Btn hidden md:flex"
-                  >
-                    Edit Profile
-                  </button>
-                </Link>
-              </div>
-
-              {/* Edit Button - Mobile */}
-              <Link to="/Profile/Edit">
-                <button
-                  type="button"
-                  className="Btn my-4 flex w-full justify-center md:hidden"
-                >
-                  Edit Profile
-                </button>
-              </Link>
-
-              {/* Name and Email */}
-              <div className="mt-4">
-                <h1 className="text-3xl font-bold">
+              <div className="mt-3 min-w-0 flex-1 text-center md:mb-2 md:mt-0 md:text-left">
+                <h1 className="truncate text-2xl font-bold text-gray-900 md:text-3xl dark:text-gray-100">
                   {userData.name}
                 </h1>
-
-                <p className="text-gray-900">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   @{userData.username}
                 </p>
-
-                <p className="text-gray-900">
+                <p className="truncate text-sm text-gray-500 dark:text-gray-400">
                   {userData.email}
                 </p>
               </div>
 
-              {/* Statistics */}
-              <div className="mt-6 flex flex-wrap gap-10">
-                <div>
-                  <p className="text-xl font-bold">
-                    {userData.followersCount}
-                  </p>
-
-                  <p className="text-amber-300 dark:text-sky-300">
-                    Followers
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xl font-bold">
-                    {userData.followingCount}
-                  </p>
-
-                  <p className="text-amber-300 dark:text-sky-300">
-                    Following
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xl font-bold">
-                    {userData.bookmarksCount}
-                  </p>
-
-                  <p className="text-amber-300 dark:text-sky-300">
-                    Bookmarks
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Posts Section */}
-          <section className="mt-8">
-            {/* My Posts Heading */}
-            <div className="flex min-h-50 items-center justify-center perspective-[1000px]">
-              <h2
-                className="
-                  cursor-pointer
-                  rounded-xl border-2 border-teal-600
-                  bg-teal-500 px-8 py-4
-                  text-5xl font-black text-white
-                  shadow-2xl
-                  transform-3d
-                  transition-transform duration-500 ease-out
-                  hover:transform-[rotateX(20deg)_rotateY(-20deg)_translateZ(30px)]
-                  hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.5)]
-                "
-              >
-                <span className="block transform-[translateZ(40px)]">
-                  My Posts
-                </span>
-              </h2>
+              <Link to="/Profile/Edit" className="Btn">
+                <button type="button">Edit profile</button>
+              </Link>
             </div>
 
-            {/* Posts List */}
-            <div className="mx-auto mt-6 w-full max-w-2xl">
-              {isLoading ? (
-                <p className="text-center text-white">
-                  Loading posts...
-                </p>
-              ) : posts && posts.length > 0 ? (
-                <div className="flex flex-col gap-5">
-                  {posts.map((post) => (
-                    <PostCard
-                      key={post._id}
-                      post={post}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-2xl text-gray-200">
-                  No posts yet.
-                </p>
-              )}
+            {/* Stats: بتدوسي عليها تفتح التاب، والـ active بيتلوّن */}
+            <div className="mt-5 grid grid-cols-3 divide-x divide-gray-200 border-t border-gray-200 pt-4 text-center dark:divide-slate-800 dark:border-slate-800">
+              {stats.map((s) => {
+                const active = tab === s.key;
+                return (
+                  <button
+                    key={s.key}
+                    type="button"
+                    onClick={() => setTab(s.key)}
+                    aria-pressed={active}
+                    className="cursor-pointer py-1 transition-colors"
+                  >
+                    <p
+                      className={`text-lg font-bold ${
+                        active
+                          ? "text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-900 dark:text-gray-100"
+                      }`}
+                    >
+                      {s.value}
+                    </p>
+                    <p
+                      className={`text-sm ${
+                        active
+                          ? "font-semibold text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      {s.label}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
-          </section>
-        </div>
-      </main>
-    </>
+          </div>
+        </section>
+
+        {/* =========================
+            Tabs
+        ========================= */}
+        <Tabs
+          className="mt-4 w-full"
+          selectedKey={tab}
+          onSelectionChange={(key) => setTab(key as TabKey)}
+        >
+          <Tabs.ListContainer className="px-4 md:px-0">
+            <Tabs.List aria-label="Profile sections" className="w-full">
+              {tabs.map((t) => (
+                <Tabs.Tab key={t.key} id={t.key} className="flex-1 text-xs sm:text-sm">
+                  {t.label}
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
+
+          <Tabs.Panel id="posts" className="mx-auto mt-4 w-full md:max-w-2xl">
+            {renderPosts(posts.data, posts.isLoading, "No posts yet.")}
+          </Tabs.Panel>
+
+          <Tabs.Panel id="followers" className="mx-auto mt-4 w-full md:max-w-2xl">
+            <UserList
+              users={followers.data}
+              isLoading={followers.isLoading}
+              emptyText="No followers yet."
+            />
+          </Tabs.Panel>
+
+          <Tabs.Panel id="following" className="mx-auto mt-4 w-full md:max-w-2xl">
+            <UserList
+              users={following.data}
+              isLoading={following.isLoading}
+              emptyText="You're not following anyone yet."
+            />
+          </Tabs.Panel>
+
+          <Tabs.Panel id="bookmarks" className="mx-auto mt-4 w-full md:max-w-2xl">
+            {renderPosts(bookmarks.data, bookmarks.isLoading, "No saved posts yet.")}
+          </Tabs.Panel>
+        </Tabs>
+      </div>
+    </main>
   );
 }
