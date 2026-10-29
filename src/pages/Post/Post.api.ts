@@ -60,3 +60,16 @@ export async function sharePostApi({ postId, body }: { postId: string; body: { b
     }
   );
 }
+
+
+
+// دالة حفظ / إلغاء حفظ البوست (Bookmark)
+export async function toggleBookmarkPost(postId: string) {
+  return await axios.put(
+    `${getBaseUrl()}/posts/${postId}/bookmark`,
+    {},
+    {
+      headers: { token: getToken() },
+    }
+  );
+}
