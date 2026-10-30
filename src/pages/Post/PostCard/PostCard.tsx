@@ -22,6 +22,8 @@ import { toggleLikePost, toggleFollowUser } from "../Post.api";
 import SharePostModal from "./SharePostModal/SharePostModal";
 import { timeAgo } from "./timenow";
 import { useBookmark } from "../useBookmark";
+import { useQuery } from "@tanstack/react-query"; // ضيفيها جنب useMutation, useQueryClient
+import { getFollowList } from "../../../components/Profile/Profile.api"; // عدّلي المسار
 
 export default function PostCard({
   post,
@@ -138,33 +140,60 @@ export default function PostCard({
     },
   });
 
-  // =========================
-  // Follow / Unfollow
-  // =========================
-  const serverFollowing = !!(post.user as any).isFollowing;
-  const [isFollowing, setIsFollowing] = useState(serverFollowing);
+// =========================
+// Follow / Unfollow
+// =========================
+// قايمة اللي أنا متابعاهم: مشتركة بين كل البوستات (نفس الـ queryKey = طلب واحد بس)
+const { data: myFollowing } = useQuery({
+  queryKey: ["following", userId],
+  queryFn: () => getFollowList(userId!, "following"),
+  enabled: !!userId,
+  staleTime: 60_000,
+});
 
-  // لو الداتا اتحدثت من السيرفر
-  useEffect(() => {
-    setIsFollowing(serverFollowing);
-  }, [serverFollowing]);
+const followingFromList = myFollowing?.some(
+  (u: any) => (u._id || u.id) === post.user._id,
+);
 
-  const { mutate: handleFollow, isPending: isFollowPending } = useMutation({
-    mutationFn: () => toggleFollowUser(post.user._id),
-    onSuccess: () => {
-      const next = !isFollowing;
-      setIsFollowing(next);
-      toast.success(next ? `Followed ${name}` : `Unfollowed ${name}`);
-      queryClient.invalidateQueries({ queryKey: ["allPost"] });
-      queryClient.invalidateQueries({ queryKey: ["PostDetails", _id] });
-      queryClient.invalidateQueries({ queryKey: ["following"] });
-    },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message || "Something went wrong");
-    },
-  });
+// لو القايمة لسه ما جتش نستخدم اللي جاي من البوست
+const isFollowing: boolean =
+  followingFromList ?? !!(post.user as any).isFollowing;
 
-  const showFollow = !!userId && !isMyPost; // =========================
+const { mutate: handleFollow, isPending: isFollowPending } = useMutation({
+  mutationFn: () => toggleFollowUser(post.user._id),
+
+  onMutate: async () => {
+    await queryClient.cancelQueries({ queryKey: ["following", userId] });
+    const prev = queryClient.getQueryData<any[]>(["following", userId]);
+
+    queryClient.setQueryData<any[]>(["following", userId], (old = []) =>
+      isFollowing
+        ? old.filter((u) => (u._id || u.id) !== post.user._id)
+        : [...old, { _id: post.user._id, name, photo }],
+    );
+    return { prev, wasFollowing: isFollowing };
+  },
+
+  onSuccess: (_d, _v, ctx) => {
+    toast.success(
+      ctx?.wasFollowing ? `Unfollowed ${name}` : `Followed ${name}`,
+    );
+  },
+
+  onError: (err: any, _v, ctx) => {
+    if (ctx?.prev) queryClient.setQueryData(["following", userId], ctx.prev);
+    toast.error(err?.response?.data?.message || "Something went wrong");
+  },
+
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ["following", userId] });
+    queryClient.invalidateQueries({ queryKey: ["userFollowers", post.user._id] });
+    queryClient.invalidateQueries({ queryKey: ["userProfile", post.user._id] });
+    queryClient.invalidateQueries({ queryKey: ["suggestedUsers"] });
+  },
+});
+
+const showFollow = !!userId && !isMyPost;
   // Handlers
   // =========================
   function openEdit() {
