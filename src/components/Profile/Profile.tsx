@@ -5,11 +5,7 @@ import { Link } from "react-router";
 import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
 import PostCard from "../../pages/Post/PostCard/PostCard";
 import UserList from "./UserList";
-import {
-  getUserPosts,
-  getBookmarks,
-  getFollowList,
-} from "./Profile.api";
+import { getUserPosts, getBookmarks, getFollowList } from "./Profile.api";
 import SuggestedUsersPage from "../../pages/Post/SuggestedUsers/SuggestedUsers";
 
 type TabKey = "posts" | "followers" | "following" | "bookmarks";
@@ -18,10 +14,8 @@ export default function Profile() {
   const { userData } = useContext(AuthContext);
   const userId = userData?._id;
 
-  // التاب الـ active واحد، وبيتحكم في الإحصائيات فوق والتابس تحت
   const [tab, setTab] = useState<TabKey>("posts");
 
-  // كل تاب بيجيب داتاه لما يتفتح بس
   const posts = useQuery({
     queryKey: ["allPost", userId],
     queryFn: () => getUserPosts(userId!),
@@ -90,11 +84,9 @@ export default function Profile() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 pb-10 dark:bg-[#0b0b0f]">
-      <div className="mx-auto w-full md:max-w-4xl lg:max-w-5xl">
-        {/* =========================
-            Header
-        ========================= */}
+    // pb-24 على الموبايل عشان التاب بار، و overflow-x-clip يمنع أي سكرول أفقي
+    <main className="min-h-screen overflow-x-clip bg-gray-100 pb-24 md:pb-10 dark:bg-[#0b0b0f]">
+        {/* ========== Header ========== */}
         <section className="overflow-hidden bg-white shadow-sm md:rounded-b-2xl dark:bg-[#18181B]">
           <div className="relative h-44 w-full sm:h-56 md:h-72">
             {cover ? (
@@ -115,7 +107,7 @@ export default function Profile() {
                 <h1 className="truncate text-2xl font-bold text-gray-900 md:text-3xl dark:text-gray-100">
                   {userData.name}
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="truncate text-sm text-gray-500 dark:text-gray-400">
                   @{userData.username}
                 </p>
                 <p className="truncate text-sm text-gray-500 dark:text-gray-400">
@@ -123,12 +115,12 @@ export default function Profile() {
                 </p>
               </div>
 
-              <Link to="/Profile/Edit" className="Btn">
+              <Link to="/Profile/Edit" className="Btn mt-3 shrink-0 md:mt-0">
                 <button type="button">Edit profile</button>
               </Link>
             </div>
 
-            {/* Stats: بتدوسي عليها تفتح التاب، والـ active بيتلوّن */}
+            {/* Stats */}
             <div className="mt-5 grid grid-cols-3 divide-x divide-gray-200 border-t border-gray-200 pt-4 text-center dark:divide-slate-800 dark:border-slate-800">
               {stats.map((s) => {
                 const active = tab === s.key;
@@ -164,52 +156,67 @@ export default function Profile() {
             </div>
           </div>
         </section>
+      <div className="container mx-auto">
 
-        {/* =========================
-            Tabs
-        ========================= */}
-        <Tabs
-          className="mt-4 w-full"
-          selectedKey={tab}
-          onSelectionChange={(key) => setTab(key as TabKey)}
-        >
-          <Tabs.ListContainer className="px-4 md:px-0">
-            <Tabs.List aria-label="Profile sections" className="w-full">
-              {tabs.map((t) => (
-                <Tabs.Tab key={t.key} id={t.key} className="flex-1 text-xs sm:text-sm">
-                  {t.label}
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-              ))}
-            </Tabs.List>
-          </Tabs.ListContainer>
+        {/* ========== Content + Sidebar ========== */}
+        <div className="mt-4 grid grid-cols-1 items-start gap-4 px-0 lg:grid-cols-12 lg:px-4">
+          {/* min-w-0 يمنع المحتوى من زق الـ grid */}
+          <div className="min-w-0 lg:col-span-7">
+            <Tabs
+              className="w-full"
+              selectedKey={tab}
+              onSelectionChange={(key) => setTab(key as TabKey)}
+            >
+              <Tabs.ListContainer className="px-4 md:px-0">
+                <Tabs.List aria-label="Profile sections" className="w-full">
+                  {tabs.map((t) => (
+                    <Tabs.Tab
+                      key={t.key}
+                      id={t.key}
+                      className="flex-1 text-xs sm:text-sm"
+                    >
+                      {t.label}
+                      <Tabs.Indicator />
+                    </Tabs.Tab>
+                  ))}
+                </Tabs.List>
+              </Tabs.ListContainer>
 
-          <Tabs.Panel id="posts" className="mx-auto mt-4 w-full md:max-w-2xl">
-            {renderPosts(posts.data, posts.isLoading, "No posts yet.")}
-          </Tabs.Panel>
+              <Tabs.Panel id="posts" className="mt-4 w-full px-4 lg:px-0">
+                {renderPosts(posts.data, posts.isLoading, "No posts yet.")}
+              </Tabs.Panel>
 
-          <Tabs.Panel id="followers" className="mx-auto mt-4 w-full md:max-w-2xl">
-            <UserList
-              users={followers.data}
-              isLoading={followers.isLoading}
-              emptyText="No followers yet."
-            />
-          </Tabs.Panel>
+              <Tabs.Panel id="followers" className="mt-4 w-full px-4 lg:px-0">
+                <UserList
+                  users={followers.data}
+                  isLoading={followers.isLoading}
+                  emptyText="No followers yet."
+                />
+              </Tabs.Panel>
 
-          <Tabs.Panel id="following" className="mx-auto mt-4 w-full md:max-w-2xl">
-            <UserList
-              users={following.data}
-              isLoading={following.isLoading}
-              emptyText="You're not following anyone yet."
-            />
-          </Tabs.Panel>
+              <Tabs.Panel id="following" className="mt-4 w-full px-4 lg:px-0">
+                <UserList
+                  users={following.data}
+                  isLoading={following.isLoading}
+                  emptyText="You're not following anyone yet."
+                />
+              </Tabs.Panel>
 
-          <Tabs.Panel id="bookmarks" className="mx-auto mt-4 w-full md:max-w-2xl">
-            {renderPosts(bookmarks.data, bookmarks.isLoading, "No saved posts yet.")}
-          </Tabs.Panel>
-        </Tabs>
+              <Tabs.Panel id="bookmarks" className="mt-4 w-full px-4 lg:px-0">
+                {renderPosts(
+                  bookmarks.data,
+                  bookmarks.isLoading,
+                  "No saved posts yet."
+                )}
+              </Tabs.Panel>
+            </Tabs>
+          </div>
 
-        <SuggestedUsersPage/>
+          {/* Suggested: تحت على الموبايل، وعلى الديسكتوب sticky تحت الهيدر (64px + مسافة) */}
+          <aside className="min-w-0 px-4 lg:sticky lg:-top-20 lg:col-span-5 lg:self-start lg:px-0">
+            <SuggestedUsersPage />
+          </aside>
+        </div>
       </div>
     </main>
   );
