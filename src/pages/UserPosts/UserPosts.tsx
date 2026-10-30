@@ -211,8 +211,7 @@ export default function UserPosts() {
 
   return (
     <main className="min-h-screen overflow-x-clip bg-gray-100 pb-24 md:pb-10 dark:bg-[#0b0b0f]">
-      <div className="mx-auto w-full max-w-6xl">
-        {/* ========== Header ========== */}
+              {/* ========== Header ========== */}
         <section className="overflow-hidden bg-white shadow-sm md:rounded-b-3xl dark:bg-[#18181B]">
           <div className="relative h-44 w-full sm:h-56 md:h-72">
             {cover ? (
@@ -310,6 +309,8 @@ export default function UserPosts() {
             </div>
           </div>
         </section>
+
+      <div className="mx-auto w-full max-w-6xl">
 
         {/* ========== Posts + Sidebar ========== */}
         <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-12 lg:px-4">
