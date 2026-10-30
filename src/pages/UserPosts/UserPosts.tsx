@@ -334,7 +334,7 @@ export default function UserPosts() {
           </div>
 
           {/* Followers + Following تحت بعض، sticky، من غير overflow أفقي */}
-          <aside className="flex min-w-0 flex-col gap-4 overflow-x-hidden px-4 lg:sticky lg:top-20 lg:col-span-5 lg:self-start lg:px-0">
+          <aside className="flex min-w-0 flex-col gap-4 overflow-x-hidden px-4 lg:sticky lg:top-9 lg:col-span-5 lg:self-start lg:px-0">
             <SideCard title="Followers" count={followersCount}>
               <PeopleList
                 users={followers.data}
