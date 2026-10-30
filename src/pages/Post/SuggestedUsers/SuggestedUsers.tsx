@@ -130,7 +130,7 @@ export default function SuggestedUsersPage() {
     "flex h-10 min-w-10 cursor-pointer items-center justify-center rounded-xl border border-gray-200 px-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-gray-100 dark:hover:bg-slate-800";
 
   return (
-    <div className="min-h-screen px-4 transition-colors duration-300 ">
+    <div className="min-h-screen  transition-colors duration-300 ">
       <div className="mx-auto max-w-2xl">
         <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#18181B]">
           {/* Header */}
