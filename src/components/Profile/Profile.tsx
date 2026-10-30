@@ -213,7 +213,7 @@ export default function Profile() {
           </div>
 
           {/* Suggested: تحت على الموبايل، وعلى الديسكتوب sticky تحت الهيدر (64px + مسافة) */}
-          <aside className="min-w-0 px-4 lg:sticky lg:-top-20 lg:col-span-5 lg:self-start lg:px-0">
+          <aside className="min-w-0  lg:sticky lg:-top-18 lg:col-span-5 lg:self-start lg:px-0">
             <SuggestedUsersPage />
           </aside>
         </div>
