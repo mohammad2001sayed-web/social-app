@@ -3,7 +3,7 @@ import { useContext, useRef, useState } from "react";
 import axios from "axios";
 import { AuthContext } from "../../../context/CounterContext/AuthContext/AuthContext";
 import toast from "react-hot-toast";
-import { Camera, Lock, ShieldSecurity, User as UserIcon } from "iconsax-react";
+import { Camera, Lock, ShieldSecurity, User  } from "iconsax-react";
 
 export default function EditProfile() {
   const { userData, setuserData, getUserData } = useContext(AuthContext);
