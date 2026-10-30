@@ -310,7 +310,7 @@ export default function UserPosts() {
           </div>
         </section>
 
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="container mx-auto">
 
         {/* ========== Posts + Sidebar ========== */}
         <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-12 lg:px-4">
@@ -335,7 +335,7 @@ export default function UserPosts() {
           </div>
 
           {/* Followers + Following تحت بعض، sticky، من غير overflow أفقي */}
-          <aside className="flex min-w-0 flex-col gap-4 overflow-x-hidden px-4 lg:sticky lg:top-9 lg:col-span-5 lg:self-start lg:px-0">
+          <aside className="flex min-w-0 flex-col gap-4 overflow-x-hidden px-4 lg:sticky lg:top-9 lg:col-span-5 lg:self-start ">
             <SideCard title="Followers" count={followersCount}>
               <PeopleList
                 users={followers.data}
