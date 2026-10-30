@@ -104,7 +104,7 @@ export default function EditProfile() {
         <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl shadow-gray-100/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none transition-all">
           
           {/* رأس الكارد */}
-          <div className="border-b border-gray-100 px-8 py-6 dark:border-slate-800 bg-gradient-to-r from-indigo-50/50 to-transparent dark:from-indigo-950/20">
+          <div className="border-b border-gray-100 px-8 py-6 dark:border-slate-800 bg-linear-to-r from-indigo-50/50 to-transparent dark:from-indigo-950/20">
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <ShieldSecurity className="text-indigo-600" size="24" />
               Account Settings
