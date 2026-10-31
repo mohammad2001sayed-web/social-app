@@ -234,7 +234,7 @@ export default function Notifications() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8 mt-12 transition-colors duration-300 dark:bg-slate-950">
+    <div className="min-h-screen bg-gray-50 px-4 py-8 md:mt-12 transition-colors duration-300 dark:bg-slate-950">
       <div className="mx-auto max-w-2xl">
         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {/* Header */}
