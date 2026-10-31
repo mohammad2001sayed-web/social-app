@@ -2,13 +2,83 @@ import { Avatar, Button, Input, Label } from "@heroui/react";
 import { useContext, useRef, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Camera, Gallery, Lock, ShieldSecurity } from "iconsax-react";
+import {
+  Camera,
+  Eye,
+  EyeSlash,
+  Gallery,
+  Lock,
+  ShieldSecurity,
+  TickCircle,
+  CloseCircle,
+} from "iconsax-react";
 import { AuthContext } from "../../../context/CounterContext/AuthContext/AuthContext";
 
 const BASE = import.meta.env.VITE_BASE_URL;
 const PHOTO_ENDPOINT = `${BASE}/users/upload-photo`;
 const COVER_ENDPOINT = `${BASE}/users/upload-cover`; // غيّريه لو المسار مختلف
 const MAX_MB = 5;
+
+/* ---------- قواعد الباسورد ---------- */
+const rules = [
+  { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
+  { label: "One uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
+  { label: "One lowercase letter", test: (p: string) => /[a-z]/.test(p) },
+  { label: "One number", test: (p: string) => /\d/.test(p) },
+  {
+    label: "One special character",
+    test: (p: string) => /[^A-Za-z0-9]/.test(p),
+  },
+];
+
+/* ---------- حقل الباسورد مع زرار العين ---------- */
+function PasswordField({
+  label,
+  value,
+  onChange,
+  autoComplete,
+  invalid,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+  invalid?: boolean;
+}) {
+  const [show, setShow] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+        {label}
+      </Label>
+      <div className="relative">
+        <Input
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="••••••••"
+          autoComplete={autoComplete}
+          aria-invalid={invalid}
+          className={`w-full pr-11 ${invalid ? "border-red-500" : ""}`}
+        />
+        <button
+          type="button"
+          onClick={() => setShow((v) => !v)}
+          aria-label={show ? "Hide password" : "Show password"}
+          aria-pressed={show}
+          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400"
+        >
+          {show ? (
+            <EyeSlash size="18" color="currentColor" />
+          ) : (
+            <Eye size="18" color="currentColor" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function EditProfile() {
   const { userData, setuserData, getUserData } = useContext(AuthContext);
@@ -27,7 +97,17 @@ export default function EditProfile() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const authHeaders = () => ({ headers: { token: localStorage.getItem("tkn") } });
+  // ---------- Validation ----------
+  const ruleResults = rules.map((r) => ({ ...r, ok: r.test(newPassword) }));
+  const allRulesOk = ruleResults.every((r) => r.ok);
+  const sameAsOld = newPassword.length > 0 && newPassword === password;
+  const mismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const canSubmit =
+    !!password && allRulesOk && !sameAsOld && !!confirmPassword && !mismatch;
+
+  const authHeaders = () => ({
+    headers: { token: localStorage.getItem("tkn") || "" },
+  });
 
   function validate(file: File) {
     if (!file.type.startsWith("image/")) {
@@ -44,16 +124,12 @@ export default function EditProfile() {
   // =========================
   // Upload (photo / cover)
   // =========================
-  async function upload(
-    file: File,
-    kind: "photo" | "cover",
-  ) {
+  async function upload(file: File, kind: "photo" | "cover") {
     if (!validate(file)) return;
 
     const isCover = kind === "cover";
     const setBusy = isCover ? setCoverLoading : setPhotoLoading;
-    const localUrl = URL.createObjectURL(file);
-    if (isCover) setCoverPreview(localUrl);
+    if (isCover) setCoverPreview(URL.createObjectURL(file));
 
     try {
       setBusy(true);
@@ -75,7 +151,7 @@ export default function EditProfile() {
       toast.error(error?.response?.data?.message || "Upload failed");
     } finally {
       setBusy(false);
-      if (isCover && photoInputRef.current) photoInputRef.current.value = "";
+      if (photoInputRef.current) photoInputRef.current.value = "";
       if (coverInputRef.current) coverInputRef.current.value = "";
     }
   }
@@ -86,11 +162,15 @@ export default function EditProfile() {
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
 
-    if (newPassword.length < 8) {
-      toast.error("New password must be at least 8 characters");
+    if (!allRulesOk) {
+      toast.error("New password doesn't meet all the requirements");
       return;
     }
-    if (newPassword !== confirmPassword) {
+    if (sameAsOld) {
+      toast.error("New password must be different from the current one");
+      return;
+    }
+    if (mismatch) {
       toast.error("New password and confirm password do not match");
       return;
     }
@@ -128,7 +208,6 @@ export default function EditProfile() {
   }
 
   const coverSrc = coverPreview || (userData as any).cover || "";
-  const mismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
 
   return (
     <main className="min-h-screen overflow-x-clip bg-gray-100 pb-24 md:pb-10 dark:bg-[#0b0b0f]">
@@ -241,59 +320,72 @@ export default function EditProfile() {
             </div>
           </header>
 
-          <form onSubmit={changePassword} className="flex flex-col gap-5 p-6">
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                Current Password
-              </Label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full"
-              />
-            </div>
+          <form
+            onSubmit={changePassword}
+            noValidate
+            className="flex flex-col gap-5 p-6"
+          >
+            <PasswordField
+              label="Current Password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="current-password"
+            />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                  New Password
-                </Label>
-                <Input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full"
-                />
-              </div>
+            <PasswordField
+              label="New Password"
+              value={newPassword}
+              onChange={setNewPassword}
+              autoComplete="new-password"
+              invalid={sameAsOld}
+            />
 
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                  Confirm New Password
-                </Label>
-                <Input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full"
-                />
-                {mismatch && (
-                  <p className="text-xs text-red-500">Passwords don't match</p>
-                )}
-              </div>
-            </div>
+            {/* شروط الباسورد: بتظهر أول ما تبدأي تكتبي */}
+            {newPassword.length > 0 && (
+              <ul className="grid grid-cols-1 gap-1.5 rounded-xl bg-gray-50 p-3 sm:grid-cols-2 dark:bg-slate-800/50">
+                {ruleResults.map((r) => (
+                  <li
+                    key={r.label}
+                    className={`flex items-center gap-2 text-xs transition-colors ${
+                      r.ok
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {r.ok ? (
+                      <TickCircle size="16" color="currentColor" variant="Bold" />
+                    ) : (
+                      <CloseCircle size="16" color="currentColor" />
+                    )}
+                    {r.label}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {sameAsOld && (
+              <p className="-mt-3 text-xs text-red-500">
+                New password must be different from the current one
+              </p>
+            )}
+
+            <PasswordField
+              label="Confirm New Password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              autoComplete="new-password"
+              invalid={mismatch}
+            />
+            {mismatch && (
+              <p className="-mt-3 text-xs text-red-500">
+                Passwords don't match
+              </p>
+            )}
 
             <div className="flex justify-end border-t border-gray-100 pt-5 dark:border-slate-800">
               <Button
                 type="submit"
-                isDisabled={passwordLoading || mismatch}
-                className="h-10 rounded-xl bg-indigo-600 px-6 text-xs font-semibold text-white shadow-md shadow-indigo-600/20 transition-all hover:bg-indigo-700 active:scale-95"
+                isDisabled={passwordLoading || !canSubmit}
+                className="h-10 rounded-xl bg-indigo-600 px-6 text-xs font-semibold text-white shadow-md shadow-indigo-600/20 transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50"
               >
                 <Lock size="16" color="currentColor" />
                 {passwordLoading ? "Updating..." : "Update Password"}
