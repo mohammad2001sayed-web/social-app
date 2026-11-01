@@ -165,7 +165,7 @@ export function AuthShell({
   const isLogin = mode === "login";
 
   return (
-    <main className="neu-scope flex min-h-[calc(100vh-3.5rem)] items-center justify-center overflow-x-clip px-4 py-8 md:min-h-[calc(100vh-4rem)]">
+    <main className="neu-scope flex min-h-[calc(100vh-3.5rem)] items-center justify-center overflow-x-clip px-4 py-8 md:min-h-[calc(100vh-4rem)] md:mt-12">
       <style>{CSS}</style>
 
       <div className="neu-raised auth-rise grid w-full max-w-5xl rounded-[2rem] p-3 sm:p-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
