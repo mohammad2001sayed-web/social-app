@@ -134,7 +134,8 @@ export default function Coment({
   }
 
   return (
-    <div className="w-full py-1.5">
+    // min-w-0: يمنع الكومنت من توسيع الحاوية لو فيه كلمة طويلة
+    <div className="w-full min-w-0 py-1.5">
       {/* =========================
           التعليق الأصلي
       ========================= */}
@@ -154,15 +155,15 @@ export default function Coment({
             <div className="group/bubble flex items-center gap-1">
               <div className="flex min-w-0 max-w-full flex-col items-start">
                 {(content || !image) && (
-                  <div className="max-w-full rounded-2xl bg-gray-100 px-3 py-2 dark:bg-slate-700">
+                  <div className="min-w-0 max-w-full rounded-2xl bg-gray-100 px-3 py-2 dark:bg-slate-700">
                     <Link
                       to={`/user-posts/${comment.commentCreator._id}`}
-                      className="block text-[13px] font-semibold text-gray-900 hover:underline dark:text-gray-100"
+                      className="block truncate text-[13px] font-semibold text-gray-900 hover:underline dark:text-gray-100"
                     >
                       {name}
                     </Link>
                     {content && (
-                      <p className="whitespace-pre-wrap wrap-break-word text-[15px] leading-snug text-gray-800 dark:text-gray-100">
+                      <p className="whitespace-pre-wrap wrap-anywhere text-[15px] leading-snug text-gray-800 dark:text-gray-100">
                         {content}
                       </p>
                     )}
@@ -246,7 +247,7 @@ export default function Coment({
                   onKeyDown={(e) => {
                     if (e.key === "Escape") cancelEdit();
                   }}
-                  className="min-h-7 flex-1 resize-none bg-transparent py-1 text-[15px] text-gray-900 outline-none placeholder:text-gray-500 dark:text-gray-100"
+                  className="min-h-7 min-w-0 flex-1 resize-none bg-transparent py-1 text-[15px] text-gray-900 outline-none placeholder:text-gray-500 dark:text-gray-100"
                 />
 
                 <label
@@ -315,8 +316,6 @@ export default function Coment({
               </button>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {timeAgo(comment.createdAt)}
-                {/* لو عندك متغير بيحدد هل البوست ده مشارك ولا لأ، سيبه */}
-                {/* {isShared && " · shared a post"} */}
               </p>
 
               {likesCount > 0 && (
@@ -357,16 +356,18 @@ export default function Coment({
           )}
 
           {/* الردود */}
-         {/* الردود */}
           {showReplies &&
             repliesList.map((reply: any, idx: number) => {
               const author = reply.commentCreator ?? reply.user ?? {};
-              
-              {/* حساب وقت الرد بالساعات والدقائق زي الكومنتات */}
-              const replyTimeAgo = reply.createdAt ? timeAgo(reply.createdAt) : "";
-              
-              {/* عدد لايكات الرد (لو الـ API بيرجعها) */}
-              const replyLikesCount = reply.likes?.length || reply.likesCount || 0;
+
+              // وقت الرد بنفس صيغة الكومنتات
+              const replyTimeAgo = reply.createdAt
+                ? timeAgo(reply.createdAt)
+                : "";
+
+              // عدد لايكات الرد (لو الـ API بيرجعها)
+              const replyLikesCount =
+                reply.likes?.length || reply.likesCount || 0;
 
               return (
                 <ThreadRow key={reply._id || idx} isLast={nextIsLast()}>
@@ -380,16 +381,16 @@ export default function Coment({
                     </Link>
 
                     <div className="min-w-0 flex-1">
-                      <div className="inline-block max-w-full rounded-2xl bg-gray-100 px-3 py-1.5 dark:bg-slate-800">
-                        <h5 className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      <div className="inline-block min-w-0 max-w-full rounded-2xl bg-gray-100 px-3 py-1.5 dark:bg-slate-800">
+                        <h5 className="truncate text-[13px] font-semibold text-gray-900 dark:text-gray-100">
                           {author.name || "User"}
                         </h5>
-                        <p className="whitespace-pre-wrap wrap-break-word text-sm leading-snug text-gray-800 dark:text-gray-200">
+                        <p className="whitespace-pre-wrap wrap-anywhere text-sm leading-snug text-gray-800 dark:text-gray-200">
                           {reply.content}
                         </p>
                       </div>
 
-                      {/* التاريخ (timeAgo) + عدد اللايكات للرد */}
+                      {/* التاريخ + عدد اللايكات للرد */}
                       <div className="ms-3 mt-0.5 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
                         {replyTimeAgo && <span>{replyTimeAgo}</span>}
 

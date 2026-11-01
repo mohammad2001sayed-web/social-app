@@ -24,6 +24,7 @@ import { timeAgo } from "./timenow";
 import { useBookmark } from "../useBookmark";
 import { useQuery } from "@tanstack/react-query"; // ضيفيها جنب useMutation, useQueryClient
 import { getFollowList } from "../../../components/Profile/Profile.api"; // عدّلي المسار
+import LikesModal from "./LikesModal";
 
 export default function PostCard({
   post,
@@ -69,6 +70,7 @@ export default function PostCard({
   const [updatedBody, setUpdatedBody] = useState(body || "");
   const [updatedImage, setUpdatedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [likesOpen, setLikesOpen] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +112,7 @@ export default function PostCard({
       queryClient.invalidateQueries({ queryKey: ["allPost"] });
       queryClient.invalidateQueries({ queryKey: ["PostDetails", _id] });
       queryClient.invalidateQueries({ queryKey: ["userPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["postLikes", _id] });
     },
   });
 
@@ -262,9 +265,8 @@ const showFollow = !!userId && !isMyPost;
   const isShared = !!sharedPost || !!(post as any).isShare;
 
   return (
-    <div className="w-full md:container md:mx-auto md:px-4">
-      <article className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#18181B]">
-        {/* =========================
+<div className="mx-auto w-full min-w-0 max-w-2xl">
+  <article className="w-full min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#18181B]">        {/* =========================
             Header: user + follow + three dots
         ========================= */}
         <header className="flex items-center gap-3 px-4 pt-4">
@@ -458,8 +460,7 @@ const showFollow = !!userId && !isMyPost;
                 </div>
 
                 {sharedPost.body && (
-                  <p className="whitespace-pre-wrap wrap-break-word px-3 pt-2 text-[15px] leading-relaxed text-gray-800 dark:text-gray-100">
-                    {sharedPost.body}
+<p className="whitespace-pre-wrap wrap-anywhere text-[15px] leading-relaxed text-gray-800 dark:text-gray-200">                    {sharedPost.body}
                   </p>
                 )}
 
@@ -498,17 +499,24 @@ const showFollow = !!userId && !isMyPost;
             Counts
         ========================= */}
         {(likesCount > 0 || commentsCount > 0) && (
-          <div className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400">
-            <span>
-              {likesCount > 0 &&
-                `${likesCount} ${likesCount === 1 ? "like" : "likes"}`}
-            </span>
-            <span>
-              {commentsCount > 0 &&
-                `${commentsCount} ${commentsCount === 1 ? "comment" : "comments"}`}
-            </span>
-          </div>
-        )}
+  <div className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400">
+    <span>
+      {likesCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setLikesOpen(true)}
+          className="cursor-pointer hover:underline"
+        >
+          {likesCount} {likesCount === 1 ? "like" : "likes"}
+        </button>
+      )}
+    </span>
+    <span>
+      {commentsCount > 0 &&
+        `${commentsCount} ${commentsCount === 1 ? "comment" : "comments"}`}
+    </span>
+  </div>
+)}
 
         {/* =========================
             Action bar: Like / Comment / Share / Save
@@ -603,7 +611,9 @@ const showFollow = !!userId && !isMyPost;
         isOpen={shareModal.isOpen}
         onOpenChange={shareModal.setOpen}
       />
-
+{likesOpen && (
+  <LikesModal postId={_id} onClose={() => setLikesOpen(false)} />
+)}
       {/* =========================
           Delete confirm modal
       ========================= */}

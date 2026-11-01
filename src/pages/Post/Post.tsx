@@ -1,17 +1,16 @@
 import { useContext } from "react";
 import { HandleAllPost } from "./Post.api";
 import Loding from "../../components/Loding/Loding";
-import PostCard from "./PostCard/PostCard";
 import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import CreatePost from "./CreatePost/CreatePost";
 import type { Post as PostType } from "./Post.interface";
+import PostsFeed from "../PostsFeed/PostsFeed";
 
 export default function Post() {
   const { userData } = useContext(AuthContext);
 
   const {
-    data: posts = [],
     isLoading,
     isError,
     error,
@@ -42,18 +41,11 @@ export default function Post() {
 
   return (
     <div className="dark:bg-slate-900 bg-[#0b957a] min-h-screen">
-      <div className="md:pt-20 lg:w-6/12 mx-auto flex flex-col gap-3 justify-center items-center pb-10">
-        {/* Create Post */}
+<div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-4 px-4 pt-4 md:px-0">        {/* Create Post */}
         {userData && <CreatePost user={userData} />}
 
-        {/* Posts */}
-        {posts.length > 0 ? (
-          posts.map((post) => (
-            <PostCard key={post._id || post.id} post={post} />
-          ))
-        ) : (
-          <p className="text-white text-lg">لا توجد منشورات حتى الآن الرجاء اعادة تسجيل الدخول مرة اخرى </p>
-        )}
+       {/* الفيد مع الـ infinite scroll */}
+        <PostsFeed />
       </div>
     </div>
   );

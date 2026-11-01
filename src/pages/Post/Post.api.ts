@@ -141,3 +141,74 @@ export async function getSuggestedUsersPageApi({
     hasNext: totalPages ? page < totalPages : users.length === limit,
   };
 }
+
+
+
+
+// صفحة من البوستات (للـ infinite scroll)
+export async function getPostsPageApi({
+  page,
+  limit = 10,
+}: {
+  page: number;
+  limit?: number;
+}) {
+  const res = await axios.get(
+    `${getBaseUrl()}/posts?page=${page}&limit=${limit}`,
+    authHeaders(),
+  );
+
+  const root = res.data;
+  const d = root?.data ?? root;
+  const raw = d?.posts ?? (Array.isArray(d) ? d : []);
+  const posts: Post[] = Array.isArray(raw) ? raw : [];
+
+  const pg = root?.meta?.pagination ?? d?.pagination;
+  const totalPages: number | undefined =
+    pg?.numberOfPages ?? pg?.totalPages ?? undefined;
+  const current: number = pg?.currentPage ?? page;
+
+  return {
+    posts,
+    page,
+    hasMore: totalPages ? current < totalPages : posts.length === limit,
+  };
+}
+
+// مين عمل لايك على البوست
+export async function getPostLikesPageApi({
+  postId,
+  page,
+  limit = 20,
+}: {
+  postId: string;
+  page: number;
+  limit?: number;
+}) {
+  const res = await axios.get(
+    `${getBaseUrl()}/posts/${postId}/likes?page=${page}&limit=${limit}`,
+    authHeaders(),
+  );
+
+  const root = res.data;
+  const d = root?.data ?? root;
+  const raw = d?.likes ?? d?.users ?? (Array.isArray(d) ? d : []);
+  const list: any[] = Array.isArray(raw) ? raw : [];
+
+  // العنصر ممكن يكون user مباشرة أو { user: {...} }
+  const users = list
+    .map((x) => x?.user ?? x)
+    .filter((u) => u && typeof u === "object" && (u._id || u.id));
+
+  const pg = root?.meta?.pagination ?? d?.pagination;
+  const totalPages: number | undefined =
+    pg?.numberOfPages ?? pg?.totalPages ?? undefined;
+  const current: number = pg?.currentPage ?? page;
+
+  return {
+    users,
+    page,
+    // من غير meta مبنقولش في صفحة تانية، عشان ما نكررش نفس النتايج
+    hasMore: totalPages ? current < totalPages : false,
+  };
+}
