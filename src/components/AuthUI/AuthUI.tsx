@@ -179,7 +179,7 @@ export function AuthShell({
             <h2 className="mt-4 max-w-xs text-xl font-semibold leading-snug">
               Stay close to the people who matter.
             </h2>
-            <p className="mt-2 max-w-xs text-sm leading-relaxed text-[var(--mute)]">
+            <p className="mt-2 max-w-xs text-sm leading-relaxed text-(--mute)">
               Share what is happening, follow friends and never miss a reply.
             </p>
           </div>
