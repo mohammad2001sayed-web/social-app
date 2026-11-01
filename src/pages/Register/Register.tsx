@@ -1,23 +1,21 @@
-import {
-  Button,
-  Form,
-  Input,
-  Label,
-  TextField,
-  Select,
-  ListBox,
-  Spinner,
-} from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check } from "iconsax-react";
+import { Calendar, Lock, Profile, Sms, User } from "iconsax-react";
 import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-
+import { Link, useNavigate } from "react-router";
 import { ZodRegister, type RegisterDataForm } from "./rigester.validation";
 import { sendUserRigister } from "./register.api";
-import { useNavigate } from "react-router";
+import {
+  AuthShell,
+  NeuButton,
+  NeuInput,
+} from "../../components/AuthUI/AuthUI";
+
+const TODAY = new Date().toISOString().split("T")[0];
 
 export default function Register() {
+  const navigate = useNavigate();
+
   const {
     handleSubmit,
     register,
@@ -38,196 +36,164 @@ export default function Register() {
     resolver: zodResolver(ZodRegister),
   });
 
-  const navigator = useNavigate();
-
-  async function SayHello(userData: RegisterDataForm) {
-    console.log("Form Data:", userData);
-    toast.promise(sendUserRigister(userData), {
-      loading: "wait wait...",
-      success: function (x) {
-        reset();
-        navigator("/Login");
-        return <h1 className="text-emerald-500 capitalize">{x}</h1>;
-      },
-      error: function () {
-        return <h1 className="text-red-600 capitalize">erorr data</h1>;
-      },
-    });
+  async function onSubmit(values: RegisterDataForm) {
+    try {
+      await toast.promise(sendUserRigister(values), {
+        loading: "Creating your account...",
+        success: (msg) => {
+          reset();
+          navigate("/login");
+          return typeof msg === "string" ? msg : "Account created!";
+        },
+        error: (err: any) =>
+          err?.response?.data?.message ||
+          err?.message ||
+          "Registration failed",
+      });
+    } catch {
+      // الرسالة ظاهرة في الـ toast
+    }
   }
 
   return (
-    <div className=" dark:from-emerald-900 dark:to-slate-400       flex justify-center py-30 items-center min-h-screen bg-linear-to-r from-blue-500 to-purple-600">
-      <Form
-        onSubmit={handleSubmit(SayHello)}
-        className="dark:bg-black dark:text-blue-300  flex lg:min-w-2xl bg-white shadow-2xl p-10 rounded-xl flex-col gap-4"
+    <AuthShell mode="register">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+        className="auth-stagger grid grid-cols-1 gap-5 sm:grid-cols-2"
       >
-        <h1 className="text-center text-2xl font-bold">Register</h1>
-
-        {/* name Input */}
-        {/* name Input */}
-        <TextField isRequired type="text" isInvalid={!!errors.name}>
-          <Label>name</Label>
-          <Input
-            {...register("name")}
-            autoComplete="name"
-            autoCorrect="off"
-            autoCapitalize="words"
-            placeholder="Enter your name"
-          />
-          {errors.name && (
-            <span className="text-red-500 text-sm mt-1">
-              {errors.name.message}
-            </span>
-          )}
-        </TextField>
-
-        {/* username Input */}
-        <TextField isRequired type="text" isInvalid={!!errors.username}>
-          <Label>username</Label>
-          <Input
-            {...register("username")}
-            autoComplete="username"
-            autoCorrect="off"
-            autoCapitalize="none"
-            placeholder="Enter your username"
-          />
-          {/* 👇 كان ناقص */}
-          {errors.username && (
-            <span className="text-red-500 text-sm mt-1">
-              {errors.username.message}
-            </span>
-          )}
-        </TextField>
-
-        {/* email Input */}
-        <TextField isRequired type="email" isInvalid={!!errors.email}>
-          <Label>email</Label>
-          <Input
-            {...register("email")}
-            autoComplete="email"
-            autoCapitalize="none"
-            autoCorrect="off"
-            placeholder="Enter your email"
-          />
-          {errors.email && (
-            <span className="text-red-500 text-sm mt-1">
-              {errors.email.message}
-            </span>
-          )}
-        </TextField>
-
-        {/* password Input */}
-        <TextField isRequired type="password" isInvalid={!!errors.password}>
-          <Label>password</Label>
-          <Input
-            {...register("password")}
-            autoComplete="new-password"
-            autoCapitalize="none"
-            autoCorrect="off"
-            placeholder="Enter your password"
-          />
-          {/* 👇 كان ناقص */}
-          {errors.password && (
-            <span className="text-red-500 text-sm mt-1">
-              {errors.password.message}
-            </span>
-          )}
-        </TextField>
-
-        {/* confirm password Input */}
-        <TextField isRequired type="password" isInvalid={!!errors.rePassword}>
-          <Label>Confirm Password</Label>
-          <Input
-            {...register("rePassword")}
-            autoComplete="new-password"
-            autoCapitalize="none"
-            autoCorrect="off"
-            placeholder="Confirm your password"
-          />
-          {errors.rePassword && (
-            <span className="text-red-500 text-sm mt-1">
-              {errors.rePassword.message}
-            </span>
-          )}
-        </TextField>
-
-        <Controller
-          name="dateOfBirth"
-          control={control}
-          render={({ field, fieldState }) => (
-            <TextField isRequired isInvalid={!!fieldState.error} type="date">
-              <Label>Date of Birth</Label>
-              <Input
-                {...field}
-                type="date"
-                max={new Date().toISOString().split("T")[0]} // 👈 لا يسمح بتاريخ في المستقبل
-                min="1970-01-01" // 👈 لا يسمح بتاريخ قديم جداً
-                placeholder="Enter your date of birth"
-              />
-              {fieldState.error && (
-                <span className="text-red-500 text-sm mt-1">
-                  {fieldState.error.message}
-                </span>
-              )}
-            </TextField>
-          )}
+        <NeuInput
+          label="Name"
+          Icon={User}
+          autoComplete="name"
+          autoCapitalize="words"
+          placeholder="Your name"
+          error={errors.name?.message}
+          {...register("name")}
         />
+
+        <NeuInput
+          label="Username"
+          Icon={Profile}
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          placeholder="your_username"
+          error={errors.username?.message}
+          {...register("username")}
+        />
+
+        <NeuInput
+          wrapperClassName="sm:col-span-2"
+          label="Email"
+          Icon={Sms}
+          type="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          placeholder="you@example.com"
+          error={errors.email?.message}
+          {...register("email")}
+        />
+
+        <NeuInput
+          label="Password"
+          Icon={Lock}
+          type="password"
+          autoComplete="new-password"
+          placeholder="Create a password"
+          error={errors.password?.message}
+          {...register("password")}
+        />
+
+        <NeuInput
+          label="Confirm password"
+          Icon={Lock}
+          type="password"
+          autoComplete="new-password"
+          placeholder="Repeat the password"
+          error={errors.rePassword?.message}
+          {...register("rePassword")}
+        />
+
+        <NeuInput
+          label="Date of birth"
+          Icon={Calendar}
+          type="date"
+          min="1970-01-01"
+          max={TODAY}
+          error={errors.dateOfBirth?.message}
+          {...register("dateOfBirth")}
+        />
+
+        {/* الجندر: زرارين محفورين بدل القايمة */}
         <Controller
           name="gender"
           control={control}
           render={({ field, fieldState }) => (
-            <Select
-              placeholder="Select your gender"
-              isInvalid={!!fieldState.error}
-              // 👇 بدل {...field} اللي بيسبب المشكلة
-              selectedKey={field.value}
-              onSelectionChange={(key) => field.onChange(String(key))}
-              onBlur={field.onBlur}
-            >
-              <Label>Gender</Label>
-              <Select.Trigger>
-                <Select.Value />
-                <Select.Indicator />
-              </Select.Trigger>
-              <Select.Popover>
-                <ListBox>
-                  <ListBox.Item id="male" textValue="Male">
-                    Male
-                    <ListBox.ItemIndicator />
-                  </ListBox.Item>
-                  <ListBox.Item id="female" textValue="Female">
-                    Female
-                    <ListBox.ItemIndicator />
-                  </ListBox.Item>
-                </ListBox>
-              </Select.Popover>
+            <fieldset className="min-w-0">
+              <legend className="mb-1.5 ms-1 text-xs font-semibold text-(--mute)">
+                Gender
+              </legend>
+              <div
+                role="radiogroup"
+                aria-label="Gender"
+                aria-invalid={!!fieldState.error}
+                onBlur={field.onBlur}
+                className="neu-inset grid grid-cols-2 gap-1.5 rounded-2xl p-1.5"
+              >
+                {(["male", "female"] as const).map((g) => {
+                  const active = field.value === g;
+                  return (
+                    <button
+                      key={g}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => field.onChange(g)}
+                      className={`h-9 cursor-pointer rounded-xl text-sm font-semibold capitalize transition-all duration-300 ${
+                        active
+                          ? "neu-raised-sm text-accent"
+                          : "text-(--mute) hover:text-(--ink)"
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  );
+                })}
+              </div>
               {fieldState.error && (
-                <span className="text-red-500 text-sm mt-1">
+                <p
+                  role="alert"
+                  className="mt-1.5 ms-1 text-xs font-medium text-red-600 dark:text-red-400"
+                >
                   {fieldState.error.message}
-                </span>
+                </p>
               )}
-            </Select>
+            </fieldset>
           )}
         />
-        <div className="flex flex-col gap-2">
-          <Button
-            className={`w-full text-2xl  bg-emerald-950 text-emerald-400 border border-emerald-400 border-b-4 font-medium overflow-hidden relative px-4 py-2 rounded-md hover:brightness-150 hover:border-t-4 hover:border-b active:opacity-75`}
-            type="submit"
-            isPending={isSubmitting}
+
+        <NeuButton
+          type="submit"
+          loading={isSubmitting}
+          className="sm:col-span-2"
+        >
+          Create account
+        </NeuButton>
+
+        <p className="text-center text-sm text-(--mute) sm:col-span-2">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            replace
+            state={{ switched: true }}
+            className="font-bold text-accent hover:underline"
           >
-            {isSubmitting ? (
-              <Spinner color="current" size="lg" />
-            ) : (
-              <>
-                <Check size="24" color="#f0ff" variant="Linear" /> Submit
-              </>
-            )}
-          </Button>
-          <Button className={`w-full text-red-500 text-2xl `} type="reset">
-            Reset
-          </Button>
-        </div>
-      </Form>
-    </div>
+            Login
+          </Link>
+        </p>
+      </form>
+    </AuthShell>
   );
 }

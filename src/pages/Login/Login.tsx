@@ -1,24 +1,21 @@
-import {
-  Button,
-  Form,
-  Input,
-  Label,
-  TextField,
-  Spinner,
-} from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check } from "iconsax-react";
+import { Lock, Sms } from "iconsax-react";
+import { useContext } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { ZodLogin, type LoginDataForm } from "./Login.validation";
 import { sendUserLogin } from "./login.api";
-import { useContext } from "react";
 import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContext";
+import {
+  AuthShell,
+  NeuButton,
+  NeuInput,
+} from "../../components/AuthUI/AuthUI";
 
 export default function Login() {
-  // 1. استدعاء setUserToken من الـ Context
   const { getUserData, setuserData, setUserToken } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const {
     handleSubmit,
@@ -26,94 +23,79 @@ export default function Login() {
     formState: { errors, isSubmitting },
     reset,
   } = useForm<LoginDataForm>({
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
     mode: "all",
     resolver: zodResolver(ZodLogin),
   });
 
-  const navigator = useNavigate();
+  async function onSubmit(values: LoginDataForm) {
+    try {
+      await toast.promise(sendUserLogin(values), {
+        loading: "Signing you in...",
+        success: (x) => {
+          const token = x.data.token || x.data.data?.token || "";
 
-  async function SayHello(userData: LoginDataForm) {
-    console.log("Form Data:", userData);
-    toast.promise(sendUserLogin(userData), {
-      loading: "wait wait...",
-      success: function (x) {
-        const token = x.data.token || x.data.data?.token || "";
-        
-        // 2. حفظ التوكين في الـ localStorage والتحديث في الـ State فوراً
-        localStorage.setItem("tkn", token);
-        setUserToken(token); // السطر ده هو السر اللي هيخلّي النافبار يحدّث فوراً
+          // نحفظ التوكن ونحدّث الـ state فورًا عشان النافبار يتحدث
+          localStorage.setItem("tkn", token);
+          setUserToken(token);
 
-        getUserData().then(function (data) {
-          setuserData(data);
-        });
+          getUserData().then((data) => setuserData(data));
 
-        reset();
-        navigator("/Post");
-        return <h1 className="text-emerald-500 capitalize">{x.data.message}</h1>;
-      },
-      error: function (x: Error) {
-        return <h1 className="text-red-600 capitalize">{x.message}</h1>;
-      },
-    });
+          reset();
+          navigate("/post");
+          return x.data.message || "Welcome back!";
+        },
+        error: (err: any) =>
+          err?.response?.data?.message || err?.message || "Login failed",
+      });
+    } catch {
+      // الرسالة ظاهرة في الـ toast
+    }
   }
 
   return (
-    <div className="flex justify-center py-30 items-center min-h-screen bg-linear-to-r from-[#09c] to-[#021]">
-      <Form
-        onSubmit={handleSubmit(SayHello)}
-        className="flex bg-white outline-4 outline-sky-300 dark:bg-sky-900 dark:text-white lg:min-w-2xl shadow-2xl p-10 rounded-xl flex-col gap-4"
+    <AuthShell mode="login">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+        className="auth-stagger flex flex-col gap-5"
       >
-        <h1 className="text-center text-2xl font-bold">Login</h1>
+        <NeuInput
+          label="Email"
+          Icon={Sms}
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          error={errors.email?.message}
+          {...register("email")}
+        />
 
-        {/* email Input */}
-        <TextField isRequired type="email" isInvalid={!!errors.email}>
-          <Label>email</Label>
-          <Input
-            {...register("email")}
-            className="focus:ring-amber-300"
-            placeholder="Enter your email"
-          />
-          {errors.email && (
-            <span className="text-red-500 text-sm mt-1">
-              {errors.email.message}
-            </span>
-          )}
-        </TextField>
+        <NeuInput
+          label="Password"
+          Icon={Lock}
+          type="password"
+          autoComplete="current-password"
+          placeholder="Your password"
+          error={errors.password?.message}
+          {...register("password")}
+        />
 
-        {/* password Input */}
-        <TextField isRequired type="password" isInvalid={!!errors.password}>
-          <Label>password</Label>
-          <Input
-            {...register("password")}
-            className="focus:ring-amber-300"
-            placeholder="Enter your password"
-          />
-          {errors.password && (
-            <span className="text-red-500 text-sm mt-1">
-              {errors.password.message}
-            </span>
-          )}
-        </TextField>
+        <NeuButton type="submit" loading={isSubmitting}>
+          Login
+        </NeuButton>
 
-        <div className="flex flex-col gap-2">
-          <Button className="w-full  bg-emerald-950 text-emerald-400 border border-emerald-400 border-b-4 font-medium overflow-hidden relative px-4 py-2 rounded-md hover:brightness-150 hover:border-t-4 hover:border-b active:opacity-75" type="submit" isPending={isSubmitting}>
-            {isSubmitting ? (
-              <Spinner color="current" size="lg" />
-            ) : (
-              <>
-                <Check size="24" color="#ff5f" variant="Linear" /> Submit
-              </>
-            )}
-          </Button>
-          <Button className="w-full text-red-700 text-[20px]" type="reset" variant="danger">
-            Reset
-          </Button>
-        </div>
-      </Form>
-    </div>
+        <p className="text-center text-sm text-(--mute)">
+          New to Circle?{" "}
+          <Link
+            to="/register"
+            replace
+            state={{ switched: true }}
+            className="font-bold text-accent hover:underline"
+          >
+            Create an account
+          </Link>
+        </p>
+      </form>
+    </AuthShell>
   );
 }
