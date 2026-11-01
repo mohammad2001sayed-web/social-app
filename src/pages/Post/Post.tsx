@@ -41,7 +41,7 @@ export default function Post() {
 
   return (
     <div className="dark:bg-slate-900 bg-[#0b957a] min-h-screen">
-<div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-4 px-4 pt-4 md:px-0">        {/* Create Post */}
+<div className="mx-auto md:mt-10 flex w-full min-w-0 max-w-2xl flex-col gap-4 px-4 pt-5 md:px-0">        {/* Create Post */}
         {userData && <CreatePost user={userData} />}
 
        {/* الفيد مع الـ infinite scroll */}
