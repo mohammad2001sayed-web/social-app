@@ -14,17 +14,17 @@ import {
 import Coment from "../../../components/Coment/Coment";
 import { Link } from "react-router";
 import { AuthContext } from "../../../context/CounterContext/AuthContext/AuthContext";
-import { useContext, useEffect, useRef, useState } from "react";
+import { lazy, useContext, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { FnUpdatePost, FnDeletePost } from "../CreatPost.abi";
 import { toggleLikePost, toggleFollowUser } from "../Post.api";
-import SharePostModal from "./SharePostModal/SharePostModal";
 import { timeAgo } from "./timenow";
 import { useBookmark } from "../useBookmark";
 import { useQuery } from "@tanstack/react-query"; // ضيفيها جنب useMutation, useQueryClient
 import { getFollowList } from "../../../components/Profile/Profile.api"; // عدّلي المسار
-import LikesModal from "./LikesModal";
+const SharePostModal = lazy(() => import("./SharePostModal/SharePostModal"));
+const LikesModal = lazy(() => import("./LikesModal"));
 
 export default function PostCard({
   post,
@@ -486,13 +486,15 @@ const showFollow = !!userId && !isMyPost;
 
         {/* الصورة بعرض الكارت كله زي فيسبوك */}
         {!isEditing && image && (
-          <img
-            src={image}
-            alt={`${name}'s post`}
-            loading="lazy"
-            decoding="async"
-            className="max-h-150 w-full bg-gray-100 object-cover dark:bg-slate-800"
-          />
+          <div className="aspect-4/3 w-full bg-gray-100 dark:bg-slate-800">
+            <img
+              src={image}
+              alt={`${name}'s post`}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
+          </div>
         )}
 
         {/* =========================
@@ -535,6 +537,7 @@ const showFollow = !!userId && !isMyPost;
               size="22"
               color="currentColor"
               variant={isLikedByMe ? "Bold" : "Outline"}
+              aria-label={isLikedByMe ? "Unlike" : "Like"}
             />
           </button>
 
@@ -548,7 +551,7 @@ const showFollow = !!userId && !isMyPost;
               to={`/PostDetails/${_id}`}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
             >
-              <MessageText size="22" color="currentColor" />
+              <MessageText aria-label="Comment" size="22" color="currentColor" />
             </Link>
           )}
 
@@ -557,7 +560,7 @@ const showFollow = !!userId && !isMyPost;
             onClick={shareModal.open}
             className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
           >
-            <Share size="22" color="currentColor" />
+            <Share aria-label="Share" size="22" color="currentColor" />
           </button>
 
           <button
