@@ -268,7 +268,7 @@ export const NeuInput = forwardRef<HTMLInputElement, NeuInputProps>(
           className="neu-field neu-inset flex items-center gap-2 rounded-2xl px-4"
           data-invalid={!!error}
         >
-          <span className="neu-icon shrink-0 text-[var(--mute)]">
+          <span className="neu-icon shrink-0 text-(--mute)">
             <Icon size="18" color="currentColor" />
           </span>
 
@@ -278,7 +278,7 @@ export const NeuInput = forwardRef<HTMLInputElement, NeuInputProps>(
             type={isPassword && show ? "text" : type}
             aria-invalid={!!error}
             aria-describedby={error ? `${id}-error` : undefined}
-            className="h-12 min-w-0 flex-1 bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--mute)]"
+            className="h-12 min-w-0 flex-1 bg-transparent text-sm text-(--ink) outline-none placeholder:text-(--mute)"
             {...rest}
           />
 
@@ -288,7 +288,7 @@ export const NeuInput = forwardRef<HTMLInputElement, NeuInputProps>(
               onClick={() => setShow((v) => !v)}
               aria-label={show ? "Hide password" : "Show password"}
               aria-pressed={show}
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--mute)] transition-colors hover:text-[var(--accent)]"
+              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-(--mute) transition-colors hover:text-accent"
             >
               {show ? (
                 <EyeSlash size="18" color="currentColor" />
