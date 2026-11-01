@@ -259,7 +259,7 @@ export const NeuInput = forwardRef<HTMLInputElement, NeuInputProps>(
       <div className={`min-w-0 ${wrapperClassName}`}>
         <label
           htmlFor={id}
-          className="mb-1.5 ms-1 block text-xs font-semibold text-[var(--mute)]"
+          className="mb-1.5 ms-1 block text-xs font-semibold text-(--mute)"
         >
           {label}
         </label>
