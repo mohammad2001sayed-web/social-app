@@ -221,7 +221,7 @@ export function AuthShell({
               <h1 className="text-2xl font-extrabold tracking-tight">
                 {isLogin ? "Welcome back" : "Create your account"}
               </h1>
-              <p className="mt-1 text-sm text-[var(--mute)]">
+              <p className="mt-1 text-sm text-(--mute)">
                 {isLogin
                   ? "Log in to see what your friends are up to."
                   : "It only takes a minute to get started."}
