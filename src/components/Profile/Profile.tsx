@@ -6,7 +6,8 @@ import { AuthContext } from "../../context/CounterContext/AuthContext/AuthContex
 import PostCard from "../../pages/Post/PostCard/PostCard";
 import UserList from "./UserList";
 import { getUserPosts, getBookmarks, getFollowList } from "./Profile.api";
-import SuggestedUsersPage from "../../pages/Post/SuggestedUsers/SuggestedUsers";
+import SuggestedUsersSidebar from "../../pages/Post/SuggestedUsers/Suggesteduserssidebar";
+
 
 type TabKey = "posts" | "followers" | "following" | "bookmarks";
 
@@ -212,9 +213,9 @@ export default function Profile() {
             </Tabs>
           </div>
 
-          {/* Suggested: تحت على الموبايل، وعلى الديسكتوب sticky تحت الهيدر (64px + مسافة) */}
-          <aside className="min-w-0  lg:sticky lg:-top-18 lg:col-span-5 lg:self-start lg:px-0">
-            <SuggestedUsersPage />
+          {/* Suggested: تحت على الموبايل، وعلى الديسكتوب sticky تحت الهيدر (top-20 عشان الـ Navbar الثابت) */}
+          <aside className="min-w-0 px-4 lg:sticky lg:top-20 lg:col-span-5 lg:self-start lg:px-0">
+            <SuggestedUsersSidebar />
           </aside>
         </div>
       </div>

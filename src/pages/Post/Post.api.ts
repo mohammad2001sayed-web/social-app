@@ -131,6 +131,8 @@ export async function getSuggestedUsersPageApi({
   const list = d?.suggestions ?? d?.users ?? (Array.isArray(d) ? d : []);
   const users = Array.isArray(list) ? list : [];
 
+  console.log("suggestions page", page, "count:", users.length, "meta:", root?.meta);
+
   const pg = root?.meta?.pagination ?? d?.pagination;
   const totalPages: number | undefined =
     pg?.numberOfPages ?? pg?.totalPages ?? undefined;
@@ -141,7 +143,6 @@ export async function getSuggestedUsersPageApi({
     hasNext: totalPages ? page < totalPages : users.length === limit,
   };
 }
-
 
 
 

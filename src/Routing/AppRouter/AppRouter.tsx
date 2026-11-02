@@ -22,9 +22,8 @@ const Notifications = lazy(
 );
 // ⚠️ عدّل المسار ده حسب مكان الملف عندك
 const SuggestedUsersPage = lazy(
-  () => import("../../pages/Post/SuggestedUsers/SuggestedUsers"),
+  () => import("../../pages/Post/SuggestedUsers/SuggestedUsersPage"),   // ← صح
 );
-
 // بيغلّف الصفحة بـ Suspense عشان تظهر شاشة التحميل أثناء تحميل الـ chunk
 const page = (element: ReactNode) => (
   <ProtectedRoute>
